@@ -1,0 +1,548 @@
+# Maintaining @speleodb/api
+
+This package makes the web application's executable API contract available to
+TypeScript consumers. The backend owns that contract; Orval owns generated code;
+the SDK runtime owns transport adaptation. Changes should preserve these
+boundaries so an endpoint correction benefits every consumer.
+
+## Prerequisites and ownership
+
+Use Bun **1.4.2**, pinned by `.bun-version`, `packageManager`, and
+`engines.bun`. Orval **8.43.0** is an exact development dependency. The SDK has
+its own manifest, lock, tests and validation workflow and works outside the
+monorepo. Never install Git hooks as part of setup.
+
+Run hooks explicitly with `prek run --all-files`. JavaScript hooks execute with
+Bun; ESLint delegates to the package's `bun run lint` and its locked
+dependencies. Keep the Prettier hook revision aligned with the package's
+Prettier version when updating either, so local checks and hooks apply the same
+formatter.
+
+| File or directory              | Owner and purpose                                                   |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `openapi-source.json`          | Immutable backend revision and exact export SHA-256; no schema copy |
+| `orval.config.mjs`             | Pinned generator configuration and output layout                    |
+| `scripts/openapi-source.mjs`   | Loads and verifies the sole backend schema for temporary generation |
+| `scripts/openapi-metadata.mjs` | Derives response decoding and form field policies from the snapshot |
+| `src/generated/`               | Orval output; regenerate instead of editing                         |
+| `src/form-data.generated.ts`   | Generated form mutator wrappers; regenerate instead of editing      |
+| `src/runtime/`                 | Handwritten, framework-neutral HTTP runtime and regression tests    |
+| `src/index.ts`                 | Public source exports                                               |
+| `bun.lock`                     | Standalone package dependency graph                                 |
+
+Endpoint paths, parameter names and API DTOs must not be duplicated in runtime
+code. New application state, persistence models, offline queues and UI errors
+remain in their owning applications. Do not add runtime dependencies on Django,
+Capacitor or a frontend framework.
+
+The public package exports TypeScript source. A consumer does not run a package
+build first. `dist/` is disposable bundle/type smoke-test output, ignored by Git
+and excluded from publication. `./package.json` and `./openapi-source.json` are
+explicit exports for tooling and provenance. Neither this repository nor the npm
+archive contains a second OpenAPI schema. Application installs, builds and
+runtime calls use generated TypeScript and do not download the schema.
+
+## Producing the canonical schema
+
+Change endpoint behavior, serializer annotations and contract tests in the web
+repository first. Its
+[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/9b55e7c706947c2a4443110400375730e761bd26/docs/api-contract.md)
+describes route inventory, allauth and OGC composition, error/media auditing and
+backend verification. Legacy v1 is intentionally excluded from this SDK.
+
+In a standalone web checkout, use its configured environment and dependencies:
+
+```sh
+uv run --frozen python manage.py export_api_schema
+uv run --frozen python manage.py export_api_schema --check
+```
+
+Use the web application's PostgreSQL configuration for canonical exports.
+Database-specific integer bounds can differ under SQLite; when using the web
+test settings, supply its PostgreSQL `TEST_DATABASE_URL` as documented there.
+The exporter does not require a live database connection.
+
+The exporter is the composed backend generator, rather than a separate
+hand-built SDK schema. Do not call public production services to infer
+undocumented behavior or copy a browser documentation page as the contract.
+Export twice and compare when changing the exporter; timestamps,
+environment-specific hosts, identifiers or iteration order must not create
+unrelated diffs.
+
+With the existing monorepo development container, run from the monorepo root:
+
+```sh
+docker exec -w /app speleodb-monorepo-django python manage.py export_api_schema
+docker exec -w /app speleodb-monorepo-django python manage.py export_api_schema \
+  --check
+```
+
+This uses an existing configured container. Schema updates do not require
+recreating containers, deleting volumes, or initializing Git submodules. Keep
+backend revision and verification evidence in the change description; an export
+that validates structurally is not proof of endpoint correctness.
+
+`export_api_schema --output /tmp/OpenAPI.yaml` creates an export without
+replacing the web repository snapshot. Preserve those canonical bytes: do not
+independently serialize JSON as YAML, sort keys, normalize quoting or run a
+formatter over the export.
+
+### Pinning the producer source
+
+`openapi-source.json` records only `revision` and `sha256`. The producer is
+fixed to `OpenSpeleo/SpeleoDB` and its root `OpenAPI.yaml`; arbitrary hosts,
+branches and relative sibling paths are not configuration options. Record the
+full 40-character lowercase backend commit and the 64-character lowercase
+SHA-256 of the reviewed file. Obtain the hash with
+`sha256sum /absolute/path/OpenAPI.yaml` or
+`shasum -a 256 /absolute/path/OpenAPI.yaml`. The immutable revision must be
+published and contain those exact bytes before default remote generation or a
+release can pass. Keep the API contract documentation link above pinned to that
+same producer revision when updating the source record.
+
+During unpublished backend work, set `revision` to `null` and update `sha256` to
+the reviewed export's actual digest. Supply that file explicitly from the SDK
+checkout:
+
+```sh
+SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run generate
+SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run check
+SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml prek run -a
+```
+
+Use the same explicit input when running the SDK's checks in an isolated
+standalone source copy during that unpublished stage. No ancestor lookup or
+automatic monorepo dependency is involved. The loader rejects relative paths,
+empty inputs and changed bytes even when a local input is explicit. A null
+revision is an honest development state, not a release-ready pin. Never invent a
+commit or record a moving branch to bypass the first backend publication.
+
+After the reviewed backend commit is published, replace `null` with its actual
+revision, unset `SPELEODB_OPENAPI_PATH`, and run the ordinary standalone
+commands below. The loader fetches
+`https://raw.githubusercontent.com/OpenSpeleo/SpeleoDB/<revision>/OpenAPI.yaml`
+with a 30-second deadline, rejects HTTP failures and redirects, and verifies the
+SHA-256 before running Orval. A mismatch never rewrites the source record or
+generated output. The downloaded file exists only inside the generation
+process's OS temporary directory, which is cleaned on success or failure.
+
+The web repository's prek configuration regenerates its snapshot when watched
+API sources change. The SDK's local generation check compares generated source
+against its verified backend input. The monorepo root hook compares the sole web
+file's SHA-256 with `openapi-source.json` and fails on a difference; it does not
+silently synchronize them. Run these repository-owned hooks explicitly if
+needed; never install hooks as part of an SDK update.
+
+Web CI's `api-contract` job verifies export freshness and compares its SHA-256
+with this package's source record from `OpenSpeleo/SpeleoDB-TS-API` at `master`.
+The web repository variable `API_SCHEMA_REF` can select an immutable reviewed
+SDK commit during a coordinated update. Remove that override once the SDK
+default branch contains the matching contract, so future drift remains visible.
+The SDK revision must be reachable upstream before the web comparison can pass.
+Record that revision in the review; do not disable equality or replace it with
+semantic-only comparison. The SDK CI verifies generation from its pinned,
+hash-verified remote input; web CI and the monorepo root check own
+producer-to-SDK hash equality.
+
+## Regenerating and reviewing a contract change
+
+From the SDK checkout:
+
+```sh
+test -s bun.lock && bun install --frozen-lockfile
+bun run generate
+bun run generate:check
+bun run typecheck
+bun run lint
+bun run format:check
+bun run test
+bun run build
+bun pm pack --dry-run --ignore-scripts
+```
+
+`bun run check` combines generation drift, types, lint, tests and the smoke
+build. `generate:check` generates in an OS temporary directory and compares
+filenames and bytes. It never repairs checked-in output. If it fails, regenerate
+locally, review the change and rerun it; do not weaken the comparison or edit
+generated files to make the check pass.
+
+Review the source-schema diff before the generated diff. Each changed operation
+needs an accurate method/path, stable operation ID, parameters, request media,
+response statuses/media and wire models. Required, nullable, omitted, read-only
+and write-only fields are separate concepts. Empty bodies, redirects, binary
+downloads and HTML/non-JSON failures must not be described as ordinary JSON
+DTOs.
+
+The generator emits a function for each request representation when an operation
+has multiple media types: `WithJson`, `WithFormData` and `WithUrlEncoded` are
+explicit variants. A single representation keeps the base operation name. Choose
+the variant matching actual server parsing. File uploads use a typed File/Blob
+body and multipart generation; JSON serialization cannot carry bytes. Do not
+advertise a binary upload under urlencoded media merely because a generic
+framework parser is installed.
+
+The configuration derives operation decoding metadata from the full snapshot. Do
+not maintain a second endpoint table, generate metadata from stale schemas, or
+patch URLs after generation. Orval upgrades can alter names, optionality,
+serialization and generated runtime calls even when schema bytes are unchanged;
+review upgrades as SDK changes and exercise representative consumer calls.
+
+Orval 8.43's default multipart serialization for `oneOf`/`anyOf` request bodies
+references Node's Buffer type. Its field serializer also passes nested objects
+and primitive unions directly to form append methods, which cannot accept them.
+All form operations use Web API-only `unionFormData` and `unionUrlEncoded` body
+mutators. Generation creates operation-specific wrappers in
+`src/form-data.generated.ts` because Orval passes only the body to a form
+mutator. These wrappers derive nullable-field policies from the media-specific
+schema; they contain no manually maintained endpoint list. `generate:check`
+compares these wrappers as well as Orval's operation/model output.
+
+An omitted or `undefined` field stays omitted. Explicit `null` becomes an empty
+form value only for fields marked `x-drf-null-as-empty: true`, which the backend
+exporter sets when DRF interprets that value as a clear. Other nulls throw
+before transport, rather than silently preserving stale server state. JSONField
+form inputs are JSON-encoded strings in the schema: pass `JSON.stringify(value)`
+(including the string `"null"` to encode JSON null). These strings are sent
+unchanged. Arrays of ordinary form values use repeated fields, scalars become
+strings, and multipart files preserve their bytes. Unsupported nested create
+collections are excluded from form schemas; use the JSON variant instead.
+
+If upgrading Orval, test omission versus clearing, JSON strings, primitive
+unions, repeated values and file uploads in both form media before changing the
+overrides. Do not patch generated files or add Node runtime requirements to
+browser consumers.
+
+For an Orval upgrade, update its exact `devDependencies` pin in `package.json`,
+the version printed by the `orval.config.mjs` header, and the documented tool
+version together. Resolve the SDK's standalone lock first, then the monorepo
+integration lock. Regenerate even when `OpenAPI.yaml` is unchanged and review
+operation names, model exports, body encoding, error/status unions, and browser
+runtime imports. Run the SDK checks and both consumer builds/tests against the
+new output before releasing it. A generator upgrade can require a consumer
+migration without any backend change.
+
+## Operation coverage and the runtime coverage gate
+
+`bun run test` and `bun run test:coverage` run the same Vitest suite with the
+Istanbul provider pinned to the exact Vitest version. Bun uses JavaScriptCore,
+so V8 coverage is not interchangeable. The copied package CI invokes this same
+covered test command; coverage is not an optional local-only command.
+
+`tests/contract-cases.ts` reads the sole canonical schema through the same
+hash-verifying source loader used by generation. It independently derives the
+operation, parameter, request-media and response-status/media inventory.
+`tests/generated-contract.test.ts` sends every generated callable through the
+public SDK and real fetch to an owned loopback HTTP server. Currently this means
+322 canonical operations, 525 request-media callables and 1,145 declared
+status/media cases. Each callable is checked against the entire canonical
+response metadata, not only the response selected for its request test.
+Undeclared statuses and media are tested for every operation as well.
+
+The request assertions inspect bytes actually received by the server: escaped
+paths, query values and omission, declared headers, JSON, URL-encoded fields,
+repeated multipart fields, filenames, MIME types and UTF-8 file bytes. Response
+witnesses verify decoding, status classification, response headers and binary
+byte preservation. These payloads are serialization witnesses; they are **not**
+evidence that invented business DTOs satisfy backend validation. Real endpoint
+behavior and response-schema validity remain the web backend's responsibility
+and are verified by its observed contract report and API tests.
+
+Inventory assertions fail for missing or extra generated callables. The adapter
+also fails on unfamiliar signature, media, parameter serialization or response
+status shapes. When the schema grows, review the new wire contract, extend the
+independent witness strategy if needed, and update the explicit inventory
+counts. Do not skip new operations or derive expectations from generated code,
+production serializers, or a second handwritten route registry.
+
+Coverage measures only `request.ts`, `response.ts`, `browser.ts` and
+`form-data.ts`. Generated DTO and operation line counts do not inflate the
+runtime denominator; the canonical matrix proves operation coverage separately.
+Each runtime file must retain at least 95% statements, branches and lines and
+100% functions. These floors are enforced by the test command and CI. Read
+`coverage/coverage-summary.json` and `coverage/lcov.info` after a run, and
+inspect genuinely uncovered branches before changing the thresholds in
+`vitest.config.ts`. Do not add ignore directives or lower a gate merely to make
+new behavior pass. XHR event tests use an explicit adapter stub; real browser
+upload behavior is additionally covered in web's browser suite. SDK loopback
+fetch tests exercise actual redirects, disconnects and unfinished responses.
+
+Schema-source tests cover immutable URL selection, hash failures, malformed
+source records, HTTP/download failures, explicit maintenance paths, refusal to
+discover a sibling schema, generated filename drift, output preservation and
+temporary-input cleanup when generation fails. Running the SDK suite may fetch
+its pinned producer export; installing or building either application does not.
+For an unpublished local contract, supply the explicit absolute maintenance path
+to the suite just as for generation. Before release, unset it and prove the
+published immutable producer revision works in a standalone SDK checkout.
+
+## Testing runtime changes
+
+The runtime result distinguishes documented HTTP responses from unexpected
+responses with unknown data. HTTP errors normally resolve; connectivity,
+cancellation and decoding failures reject. Never replace status-based behavior
+with blanket throwing or hide malformed responses under success DTO assertions.
+
+Add tests at the real transport boundary for the changed behavior. Important
+scenarios include independent clients and rotated credentials; path/query
+encoding; JSON serialized once; multipart names, filenames, MIME types and file
+bytes; response headers and binary data; empty 204/304; documented errors and
+unexpected statuses; and invalid media/JSON.
+
+Deadline and cancellation tests must cover header preparation, body conversion,
+transport, response parsing and ignored late completion. The transport receives
+the remaining deadline plus the caller-owned signal. An adapter must not restart
+a full deadline after asynchronous preparation.
+
+The default client deadline is ten seconds. `timeoutMs: null` explicitly
+disables it, including during asynchronous header preparation; caller
+cancellation remains active and must suppress late completion. An omitted
+per-call option inherits the client policy, while an explicit finite value can
+restore a deadline for one operation. Do not use truthiness or
+nullish-coalescing defaults here: `null` and `undefined` have distinct meanings.
+Zero, negative, nonfinite and excessively large numeric durations remain
+invalid. Transports receive either the remaining finite milliseconds or `null`;
+XHR represents the latter with its documented zero timeout. A transport that
+cannot honor this policy must reject it clearly.
+
+The web application opts out of a client deadline to preserve its established
+large-file uploads and conversions; explicit polling cancellation still applies.
+Mobile continues to configure a finite deadline and rejects unbounded requests
+at its adapter boundary. Keep these application policies separate when changing
+the SDK default. Test completion beyond ten seconds, cancellation of an untimed
+request, and finite overrides on untimed clients.
+
+Merge headers case-insensitively with last-value precedence: client headers,
+generated content-type defaults, then explicit per-call headers. Orval can emit
+an object with both `Content-Type` and `content-type` keys when a caller
+supplies a `Headers` object. Passing that object directly to the `Headers`
+constructor would comma-join the values and produce an invalid request media
+type. Preserve the runtime's entry-by-entry merge and test generated JSON and
+urlencoded calls with records, tuple lists and `Headers` instances after
+generator upgrades.
+
+Browser upload tests distinguish progress, upload completion and response
+completion. XHR cannot enforce cookie omission or redirect refusal and must
+reject those policy combinations. Native adapters retain their own transport and
+device verification: ordinary TypeScript tests cannot prove cookie isolation
+inside an iOS/Android HTTP stack or cancellation on physical devices. In mobile,
+retain GIS status-before-body behavior and existing session/offline persistence
+regressions.
+
+The public generated options argument remains optional due to the fetch
+generator's signature, but an ApiClient is required at runtime. Do not introduce
+a global default client to conceal a missing caller context. Applications should
+pass their client explicitly and resolve credentials at request time.
+
+`ApiRequestOptions` exposes the supported method, body, headers, credentials and
+redirect fields plus SDK cancellation/deadline/progress options. Arbitrary fetch
+options are not advertised by this transport-neutral interface. Extend the
+transport contract and each affected adapter deliberately before adding another
+request policy.
+
+## Dependencies and monorepo integration
+
+Resolve the SDK's standalone lock outside the enclosing Bun workspace; otherwise
+a successful install can validate only the parent graph. `bun run lock` in a
+monorepo checkout uses the existing shared lock utility. In a standalone
+checkout use Bun's lock-only workflow, then verify a frozen install in a clean
+temporary copy. Update the root integration lock separately using root
+`bun run lock`.
+
+Each consumer keeps an exact registry version for standalone use. Monorepo
+overrides resolve the live SDK source; application source imports must declare
+`@speleodb/api` directly. Refresh root `bun.lock`, affected standalone consumer
+locks, and the web container overlay lock whenever the dependency graph changes.
+Run application checks from their own repositories. Do not add root check
+dispatchers or mutate standalone manifests to workspace-only dependency ranges.
+
+## Versioning and release integration
+
+Treat removed operations, renamed exports, newly required inputs, narrowed
+response types and incompatible runtime behavior as breaking changes. Additive
+operations or optional fields can be a minor release; behavior-preserving fixes
+can be patches. While the package is `0.x`, communicate breaking changes clearly
+and use a new minor version rather than quietly shipping them as a patch.
+
+The SDK version in `package.json` is independent of the backend version in
+OpenAPI's `info.version`. Never edit the backend YAML to bump the SDK version;
+the source record must continue identifying the reviewed producer bytes.
+
+A schema correction can break generated source types even when it merely makes
+existing server behavior honest. Review consumer compilation and runtime
+effects, and document the before/after contract. Never retain an inaccurate
+schema simply to avoid a consumer migration.
+
+Release order is: verify the backend contract and SDK, publish the reviewed
+backend source revision if it is not already available, record that real
+revision in the SDK and verify default remote generation, publish the SDK
+through its version tag and trusted publishing workflow, update standalone
+consumer pins and locks, verify both apps, and finally record reachable
+submodule revisions in the monorepo. Publishing, commits, pushes and parent
+pointer updates are separate explicitly authorized actions. Pushing an SDK `v*`
+tag triggers publication when all gates pass; ordinary branch pushes and pull
+requests only validate.
+
+Before a version is published to npm, a live monorepo build does not prove a
+standalone release can install it. This also applies to the initial `0.1.0`
+release. Validate an explicitly reviewed package archive in an isolated consumer
+copy, or wait for the authorized registry release. Never fabricate registry
+integrity, URLs or revisions, and do not represent unpublished-consumer lock
+failures as successful release verification.
+
+Before publication inspect `bun pm pack --dry-run --ignore-scripts`. The package
+contains source, the small source record, README, maintenance documentation and
+license; it excludes node_modules, ignored dist output, coverage, credentials
+and agent working files. Verify exported paths exist inside the archive. A
+source package must be tested through an installed archive as well as a
+workspace source link.
+
+For a concrete source-only archive smoke test, first run the SDK checks above,
+then use an empty directory outside all workspaces. Substitute the version in
+the archive filename when the package version changes:
+
+```sh
+archive_dir="$(mktemp -d)"
+bun pm pack --destination "$archive_dir" --ignore-scripts
+mkdir "$archive_dir/consumer"
+cd "$archive_dir/consumer"
+printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
+bun add "$archive_dir/speleodb-api-0.1.0.tgz"
+bun add --dev typescript@6.0.3
+cat > smoke.ts <<'TS'
+import { createApiClient, v2ProjectsList } from '@speleodb/api';
+
+const client = createApiClient({
+  baseUrl: 'https://example.test',
+  transport: async () => ({
+    status: 200,
+    data: [],
+    headers: new Headers({ 'content-type': 'application/json' }),
+  }),
+});
+const response = await v2ProjectsList({ client });
+if (response.kind !== 'documented' || response.status !== 200) {
+  throw new Error('Archive operation failed');
+}
+TS
+bun ./node_modules/typescript/bin/tsc --noEmit --strict \
+  --target ES2023 --module ESNext --moduleResolution bundler \
+  --lib ES2023,DOM smoke.ts
+bun smoke.ts
+```
+
+The custom transport keeps this check independent of any live user service.
+Inspect the tarball with `tar -tzf` and verify `package/src/index.ts`,
+`package/openapi-source.json`, `package/docs/maintenance.md`, README and license
+exist. Confirm that no `OpenAPI.yaml` is included. This smoke check does not
+replace installing the reviewed archive into isolated web/mobile copies and
+running their own tests and builds before release.
+
+### Trusted publishing setup and release
+
+The complete `.github/workflows/ci.yml` follows the same workflow as
+`@speleodb/map-core` and `@speleodb/map-viewer`, with SDK generation added. It
+uses Bun for frozen installation, lint, formatting, types, tests and builds.
+Only the tag's publishing job sets up Node 24 and npm for GitHub OIDC. This
+release-only exception does not introduce a Node runtime requirement or npm
+lockfile for development or consumers.
+
+Before a release, configure the GitHub repository's `publish` environment and
+the npm package's GitHub Actions trusted publisher with these exact values:
+
+| Setting           | Value                      |
+| ----------------- | -------------------------- |
+| Package           | `@speleodb/api`            |
+| Organization      | `OpenSpeleo`               |
+| Repository        | `SpeleoDB-TS-API`          |
+| Workflow filename | `ci.yml`                   |
+| Environment       | `publish`                  |
+| Label             | `github`                   |
+| Allowed action    | Allow direct `npm publish` |
+
+The publishing job requests `contents: read` and `id-token: write`; it does not
+read an npm write-token secret. The workflow filename is the filename alone, not
+`.github/workflows/ci.yml`. Keep the repository URL in `package.json` aligned
+with the actual upstream. The values are case-sensitive. npm requires a newly
+created trusted publisher to complete its first successful publish within two
+days; recreate an expired configuration before retrying. See npm's
+[trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/)
+for setup and troubleshooting.
+
+For the initial `0.1.0` release, confirm npm provides the package's settings and
+permits this trusted publisher to be configured. A registry `404` or successful
+local login does not establish this prerequisite. If the new package cannot yet
+be configured, finish the registry's required initial setup before a release tag
+is pushed. Keep that unresolved setup explicit; do not add a token-based
+publication fallback or a placeholder package to bypass it.
+
+The source record must also have a real, published backend revision. A local
+maintenance check with `SPELEODB_OPENAPI_PATH` establishes generated-code
+correctness but does not prove that a clean standalone SDK checkout can retrieve
+its producer. Unset that override and run `bun run check` before tagging. CI
+uses the default remote path and will reject an unresolved revision, unavailable
+export or hash mismatch before the publish job can run.
+
+After the required tests and repository-local prek checks pass, inspect the
+reviewed archive and commit the same source and documentation. When publication
+and Git actions are authorized, push the reviewed SDK commit and its
+`v<package.json version>` tag to its own upstream. For version `0.1.0`, the tag
+must be `v0.1.0`; the workflow rejects a mismatch. The publish job waits for
+`verify`, performs its own frozen install and build, and runs
+`npm publish --access public` from that tagged checkout. It packages the tagged
+files itself; the local archive is the reviewed candidate, not a separate
+manually uploaded release.
+
+Wait for the tag workflow's successful publish job, then query the actual
+registry version:
+
+```sh
+bun pm view @speleodb/api@0.1.0 name version dist.integrity
+```
+
+Use the actual release version. Inspect the published archive's file list,
+contents and `openapi-source.json` against the reviewed candidate; gzip/archive
+metadata may differ between Bun's local pack and npm's CI pack. A failed SDK
+verification job, absent trusted publisher, or rejected OIDC publication leaves
+the release incomplete. Repair the specific gate and rerun the failed workflow;
+do not weaken checks, move an existing release tag or fabricate registry
+metadata.
+
+Once the registry version is available, update the exact `@speleodb/api` pin in
+both application manifests. From the monorepo root, resolve their independent
+locks and then integration:
+
+```sh
+(cd apps/web && bun run lock)
+(cd apps/mobile && bun run lock)
+bun run lock
+docker exec -w /app speleodb-monorepo-django \
+  bun /workspace/.devcontainer/install-web-packages.mjs --refresh-lock
+```
+
+Review each lock diff, verify frozen installs in isolated standalone copies, and
+rerun each application's own types, lint, tests and build. Run root `bun ci`
+separately for integration. Successful archive checks establish package
+contents; these registry-backed checks establish that standalone consumers can
+reproduce the release. Follow the repository's explicit Git authorization rules
+when recording or publishing any resulting commits.
+
+## Troubleshooting
+
+| Failure                                      | Resolution                                                                                                                                         |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Invalid regex or unresolved schema reference | Fix the backend export, preserve match semantics, and re-export; do not disable validation                                                         |
+| Nullable `$ref` warning                      | Preserve the required non-null shape and use the backend exporter's explicit null alternative; reference siblings alone are ignored                |
+| File bytes disappear                         | Use the multipart variant and File/Blob input; inspect generated serialization and source media declarations                                       |
+| Duplicate or missing generated names         | Correct operation IDs and collisions in the source exporter                                                                                        |
+| Regeneration changes every file              | Verify exact Bun/Orval/formatter versions and stable export ordering                                                                               |
+| Unexpected response branch                   | Inspect status/media against the backend contract; do not cast away unknown data                                                                   |
+| Native request outlives timeout              | Move asynchronous preparation inside the deadline and honor the provided signal                                                                    |
+| Standalone install reports package not found | Check whether the SDK version has been published; local workspace success does not remove the release gate                                         |
+| Root and child locks differ                  | Resolve the standalone graph in isolation, then refresh the root integration and web overlay separately                                            |
+| Backend revision is unpublished              | Use an explicit absolute local input during maintenance; publish the reviewed backend commit and record its real revision before release           |
+| Backend schema hash mismatch                 | Review the canonical export and update its source record deliberately; never normalize bytes or silently accept a new remote contract              |
+| Pinned schema download fails                 | Verify the immutable web revision is reachable and contains OpenAPI.yaml, then check network access; generation never falls back to another source |
+
+Keep durable contract explanations here or in backend/application docs.
+Temporary task notes, verification logs and investigation files belong outside
+checkouts.

@@ -1,0 +1,66 @@
+{
+  "name": "@speleodb/api",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "description": "Generated, transport-independent TypeScript SDK for the SpeleoDB APIs.",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "bun": "1.4.2"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "openapi-source.json",
+    "README.md",
+    "docs",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "speleodb-source": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json",
+    "./openapi-source.json": "./openapi-source.json"
+  },
+  "scripts": {
+    "generate": "bun scripts/generate.mjs",
+    "generate:check": "bun scripts/generate.mjs --check",
+    "typecheck": "bun ./node_modules/typescript/bin/tsc --noEmit && bun ./node_modules/typescript/bin/tsc -p tsconfig.test.json",
+    "lint": "bun ./node_modules/eslint/bin/eslint.js .",
+    "test": "bun run test:coverage",
+    "test:coverage": "bun ./node_modules/vitest/vitest.mjs run --coverage",
+    "build": "bun scripts/build.mjs",
+    "check": "bun run generate:check && bun run typecheck && bun run lint && bun run test && bun run build",
+    "lock": "bun scripts/lock.mjs",
+    "check:lockfile": "bun scripts/check-lockfile.mjs",
+    "format:check": "bun ./node_modules/prettier/bin/prettier.cjs . --check",
+    "format": "bun ./node_modules/prettier/bin/prettier.cjs . --write"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "~6.0.3",
+    "vitest": "5.0.4",
+    "@vitest/coverage-istanbul": "5.0.4",
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "globals": "17.13.0",
+    "typescript-eslint": "8.71.1",
+    "prettier": "3.9.9",
+    "orval": "8.43.0"
+  },
+  "dependencies": {},
+  "packageManager": "bun@1.4.2",
+  "trustedDependencies": [
+    "esbuild"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenSpeleo/SpeleoDB-TS-API.git"
+  }
+}
