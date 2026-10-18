@@ -179,6 +179,39 @@ it("refuses transport policies XHR cannot enforce", async () => {
   ).rejects.toThrow("same-origin cookies");
 });
 
+it.each(["progress", "completion", "explicit"] as const)(
+  "rejects status-first responses before admitting %s XHR requests",
+  async (selection) => {
+    vi.stubGlobal("XMLHttpRequest", UploadRequest);
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const progress = vi.fn();
+    const uploaded = vi.fn();
+    const client = createApiClient({
+      baseUrl: "https://example.test",
+      timeoutMs: null,
+      ...(selection === "explicit" ? { transport: xhrTransport } : {}),
+    });
+    await expect(
+      apiRequest("/upload", {
+        client,
+        operation,
+        responsePolicy: "status-first-json",
+        ...(selection === "progress" ? { onUploadProgress: progress } : {}),
+        ...(selection === "completion" ? { onUploadComplete: uploaded } : {}),
+      }),
+    ).rejects.toThrow(
+      new TypeError(
+        "The XHR adapter does not support status-first responses. Use the fetch transport.",
+      ),
+    );
+    expect(UploadRequest.instances).toBe(0);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(progress).not.toHaveBeenCalled();
+    expect(uploaded).not.toHaveBeenCalled();
+  },
+);
+
 it("decodes UTF-8 response bytes and preserves binary bytes and MIME type", async () => {
   vi.stubGlobal("XMLHttpRequest", UploadRequest);
   const client = createApiClient({ baseUrl: "https://example.test" });
@@ -214,8 +247,12 @@ it("decodes UTF-8 response bytes and preserves binary bytes and MIME type", asyn
   );
 });
 
-it.each([{ redirect: "error" as const }, { credentials: "omit" as const }])(
-  "rejects unenforceable XHR policies before constructing a request",
+it.each([
+  { redirect: "error" as const },
+  { credentials: "omit" as const },
+  { responsePolicy: "status-first-json" as const },
+])(
+  "rejects unsupported XHR policies before constructing a request",
   async (policy) => {
     vi.stubGlobal("XMLHttpRequest", UploadRequest);
     await expect(xhrTransport(request(policy))).rejects.toBeInstanceOf(

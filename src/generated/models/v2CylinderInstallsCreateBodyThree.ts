@@ -9,7 +9,7 @@ import type { V2CylinderInstallsCreateBodyThreeUnitSystem } from "./v2CylinderIn
  */
 export type V2CylinderInstallsCreateBodyThree = {
   cylinder: string;
-  project?: string;
+  project: string;
   /** Station latitude coordinate */
   latitude: string | number;
   /** Station longitude coordinate */

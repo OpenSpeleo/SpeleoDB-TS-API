@@ -46,7 +46,7 @@ runtime calls use generated TypeScript and do not download the schema.
 
 Change endpoint behavior, serializer annotations and contract tests in the web
 repository first. Its
-[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/9b55e7c706947c2a4443110400375730e761bd26/docs/api-contract.md)
+[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/93b445c7c5c7d69823a849806ea05b78058edec1/docs/api-contract.md)
 describes route inventory, allauth and OGC composition, error/media auditing and
 backend verification. Legacy v1 is intentionally excluded from this SDK.
 
@@ -233,7 +233,7 @@ hash-verifying source loader used by generation. It independently derives the
 operation, parameter, request-media and response-status/media inventory.
 `tests/generated-contract.test.ts` sends every generated callable through the
 public SDK and real fetch to an owned loopback HTTP server. Currently this means
-322 canonical operations, 525 request-media callables and 1,145 declared
+322 canonical operations, 525 request-media callables and 1,148 declared
 status/media cases. Each callable is checked against the entire canonical
 response metadata, not only the response selected for its request test.
 Undeclared statuses and media are tested for every operation as well.
@@ -322,11 +322,16 @@ generator upgrades.
 
 Browser upload tests distinguish progress, upload completion and response
 completion. XHR cannot enforce cookie omission or redirect refusal and must
-reject those policy combinations. Native adapters retain their own transport and
-device verification: ordinary TypeScript tests cannot prove cookie isolation
-inside an iOS/Android HTTP stack or cancellation on physical devices. In mobile,
-retain GIS status-before-body behavior and existing session/offline persistence
-regressions.
+reject those policy combinations. Our XHR adapter waits for the complete
+response before inspecting its status, so it also rejects
+`responsePolicy: 'status-first-json'` before constructing or sending a request.
+Keep regressions for explicit XHR selection and both upload callbacks with an
+untimed client: denial bodies must never silently become an indefinite wait. Do
+not fall back to fetch while silently dropping upload observers. Native adapters
+retain their own transport and device verification: ordinary TypeScript tests
+cannot prove cookie isolation inside an iOS/Android HTTP stack or cancellation
+on physical devices. In mobile, retain GIS status-before-body behavior and
+existing session/offline persistence regressions.
 
 The public generated options argument remains optional due to the fetch
 generator's signature, but an ApiClient is required at runtime. Do not introduce
@@ -362,6 +367,24 @@ response types and incompatible runtime behavior as breaking changes. Additive
 operations or optional fields can be a minor release; behavior-preserving fixes
 can be patches. While the package is `0.x`, communicate breaking changes clearly
 and use a new minor version rather than quietly shipping them as a patch.
+
+### Migrating from 0.1.x to 0.2.0
+
+Cylinder installation creation now requires `project` in JSON, multipart and
+URL-encoded inputs, matching the backend's non-null project association. Include
+the existing project identifier when creating an installation; PUT/PATCH
+continue to allow omission to preserve the current association. Downloads at a
+specified revision now recognize JSON 400, 422 and 500 responses as documented
+results. Narrow the response by `kind` and `status` as usual. The XHR adapter
+now rejects `status-first-json` before sending; use fetch without upload
+observers when that response policy is required.
+
+These corrections require the 0.2.0 minor release because creation inputs are
+stricter. Update the exact package pin and standalone lock in each consumer,
+then run its own types, tests and build against the published package. The web
+backend remains the sole schema owner.
+
+### Release coordination
 
 The SDK version in `package.json` is independent of the backend version in
 OpenAPI's `info.version`. Never edit the backend YAML to bump the SDK version;
@@ -406,7 +429,7 @@ bun pm pack --destination "$archive_dir" --ignore-scripts
 mkdir "$archive_dir/consumer"
 cd "$archive_dir/consumer"
 printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
-bun add "$archive_dir/speleodb-api-0.1.0.tgz"
+bun add "$archive_dir/speleodb-api-0.2.0.tgz"
 bun add --dev typescript@6.0.3
 cat > smoke.ts <<'TS'
 import { createApiClient, v2ProjectsList } from '@speleodb/api';
@@ -485,8 +508,8 @@ export or hash mismatch before the publish job can run.
 After the required tests and repository-local prek checks pass, inspect the
 reviewed archive and commit the same source and documentation. When publication
 and Git actions are authorized, push the reviewed SDK commit and its
-`v<package.json version>` tag to its own upstream. For version `0.1.0`, the tag
-must be `v0.1.0`; the workflow rejects a mismatch. The publish job waits for
+`v<package.json version>` tag to its own upstream. For version `0.2.0`, the tag
+must be `v0.2.0`; the workflow rejects a mismatch. The publish job waits for
 `verify`, performs its own frozen install and build, and runs
 `npm publish --access public` from that tagged checkout. It packages the tagged
 files itself; the local archive is the reviewed candidate, not a separate
@@ -496,7 +519,7 @@ Wait for the tag workflow's successful publish job, then query the actual
 registry version:
 
 ```sh
-bun pm view @speleodb/api@0.1.0 name version dist.integrity
+bun pm view @speleodb/api@0.2.0 name version dist.integrity
 ```
 
 Use the actual release version. Inspect the published archive's file list,

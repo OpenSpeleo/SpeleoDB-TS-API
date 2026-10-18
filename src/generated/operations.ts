@@ -896,8 +896,11 @@ import type {
   V2ProjectsDownloadRetrieveByFormat404,
   V2ProjectsDownloadRetrieveByFormat422,
   V2ProjectsDownloadRetrieveByFormat500,
+  V2ProjectsDownloadRetrieveByFormatAtHash400,
   V2ProjectsDownloadRetrieveByFormatAtHash403,
   V2ProjectsDownloadRetrieveByFormatAtHash404,
+  V2ProjectsDownloadRetrieveByFormatAtHash422,
+  V2ProjectsDownloadRetrieveByFormatAtHash500,
   V2ProjectsExplorationLeadsCreateWithFormData400,
   V2ProjectsExplorationLeadsCreateWithFormData403,
   V2ProjectsExplorationLeadsCreateWithFormData404,
@@ -19308,6 +19311,11 @@ export type v2ProjectsDownloadRetrieveByFormatAtHashResponse200 = {
   status: 200;
 };
 
+export type v2ProjectsDownloadRetrieveByFormatAtHashResponse400 = {
+  data: V2ProjectsDownloadRetrieveByFormatAtHash400;
+  status: 400;
+};
+
 export type v2ProjectsDownloadRetrieveByFormatAtHashResponse403 = {
   data: V2ProjectsDownloadRetrieveByFormatAtHash403;
   status: 403;
@@ -19318,13 +19326,26 @@ export type v2ProjectsDownloadRetrieveByFormatAtHashResponse404 = {
   status: 404;
 };
 
+export type v2ProjectsDownloadRetrieveByFormatAtHashResponse422 = {
+  data: V2ProjectsDownloadRetrieveByFormatAtHash422;
+  status: 422;
+};
+
+export type v2ProjectsDownloadRetrieveByFormatAtHashResponse500 = {
+  data: V2ProjectsDownloadRetrieveByFormatAtHash500;
+  status: 500;
+};
+
 export type v2ProjectsDownloadRetrieveByFormatAtHashResponseSuccess =
   v2ProjectsDownloadRetrieveByFormatAtHashResponse200 & {
     headers: Headers;
   };
 export type v2ProjectsDownloadRetrieveByFormatAtHashResponseError = (
+  | v2ProjectsDownloadRetrieveByFormatAtHashResponse400
   | v2ProjectsDownloadRetrieveByFormatAtHashResponse403
   | v2ProjectsDownloadRetrieveByFormatAtHashResponse404
+  | v2ProjectsDownloadRetrieveByFormatAtHashResponse422
+  | v2ProjectsDownloadRetrieveByFormatAtHashResponse500
 ) & {
   headers: Headers;
 };
@@ -19357,8 +19378,11 @@ export const v2ProjectsDownloadRetrieveByFormatAtHash = (
         operationId: "v2_projects_download_retrieve_by_format_at_hash",
         responses: {
           "200": { content: { "application/octet-stream": "blob" } },
+          "400": { content: { "application/json": "json" } },
           "403": { content: { "application/json": "json" } },
           "404": { content: { "application/json": "json" } },
+          "422": { content: { "application/json": "json" } },
+          "500": { content: { "application/json": "json" } },
         },
       },
       ...options,

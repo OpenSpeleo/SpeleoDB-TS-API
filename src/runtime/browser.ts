@@ -46,6 +46,13 @@ export function xhrTransport(
       ),
     );
   }
+  if (request.responsePolicy === "status-first-json") {
+    return Promise.reject(
+      new TypeError(
+        "The XHR adapter does not support status-first responses. Use the fetch transport.",
+      ),
+    );
+  }
   return new Promise((resolve, reject) => {
     request.signal.throwIfAborted();
     const xhr = new XMLHttpRequest();

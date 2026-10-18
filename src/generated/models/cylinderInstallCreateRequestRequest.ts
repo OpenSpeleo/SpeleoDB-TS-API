@@ -9,7 +9,7 @@ import type { CylinderInstallCreateRequestRequestUnitSystem } from "./cylinderIn
  */
 export interface CylinderInstallCreateRequestRequest {
   cylinder: string;
-  project?: string;
+  project: string;
   /** Station latitude coordinate */
   latitude: string | number;
   /** Station longitude coordinate */

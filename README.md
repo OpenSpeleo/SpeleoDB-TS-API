@@ -75,8 +75,11 @@ silently omitting an update. See the
 `onUploadProgress` or `onUploadComplete` selects the browser XHR transport. The
 completion callback means request bytes have been uploaded; the server response
 may still be pending. Without these callbacks, requests use fetch. XHR rejects
-cookie omission and redirect-refusal policies it cannot enforce; use fetch for
-those operations. Callback failures do not change the HTTP result.
+cookie omission and redirect-refusal policies it cannot enforce. The XHR adapter
+also rejects `responsePolicy: 'status-first-json'` because it waits for the
+complete response body before inspecting status. Use fetch for those operations;
+the adapter never silently discards upload callbacks by switching transports.
+Callback failures do not change the HTTP result.
 
 ## Native and custom transports
 
@@ -133,7 +136,7 @@ schema.
 
 `bun run test` uses Vitest with Istanbul runtime coverage. A schema-derived
 loopback HTTP matrix exercises all 322 canonical operations, 525 generated
-request variants and 1,145 declared status/media combinations. It verifies
+request variants and 1,148 declared status/media combinations. It verifies
 request bytes, complete response metadata, decoding and unexpected responses.
 Focused tests cover cancellation, streaming, redirects, credentials, forms, XHR
 adapter events and generation safety. CI verifies generation, strict types,
