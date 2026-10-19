@@ -64,8 +64,10 @@ export interface ApiClient {
 
 export type ApiRequestOptions = Pick<
   RequestInit,
-  "method" | "headers" | "body" | "credentials" | "redirect"
+  "method" | "headers" | "credentials" | "redirect"
 > & {
+  /** Orval emits explicit undefined for optional bodies; transport omits them. */
+  body?: BodyInit | null | undefined;
   client?: ApiClient;
   signal?: AbortSignal | null;
   /** Overrides the client deadline; null explicitly disables it. */

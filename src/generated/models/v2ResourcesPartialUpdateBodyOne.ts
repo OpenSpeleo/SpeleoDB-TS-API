@@ -24,12 +24,7 @@ export type V2ResourcesPartialUpdateBodyOne = {
   file?: null;
   /** @nullable */
   miniature?: null;
-  /**
-   * * `photo` - Photo
-   * * `video` - Video
-   * * `note` - Note
-   * * `document` - Document
-   */
+  /** Must equal the existing resource type; it cannot be changed. Omitted file/text retains the existing content on update. */
   resource_type?: V2ResourcesPartialUpdateBodyOneResourceType;
   /** Text content for notes descriptions */
   text_content?: string;

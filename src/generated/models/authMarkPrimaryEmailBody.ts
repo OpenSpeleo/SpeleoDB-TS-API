@@ -3,7 +3,11 @@
  */
 
 export type AuthMarkPrimaryEmailBody = {
-  /** An email address. */
+  /**
+   * An email address.
+   * @minLength 1
+   * @maxLength 320
+   */
   email: string;
   /** Primary flag. */
   primary: true;

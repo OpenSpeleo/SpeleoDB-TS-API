@@ -3,19 +3,8 @@
  */
 import type { AuthEmail } from "./authEmail";
 import type { AuthPassword } from "./authPassword";
-import type { AuthPhone } from "./authPhone";
-import type { AuthUsername } from "./authUsername";
 
-export type AuthLogin = (
-  | {
-      username: AuthUsername;
-    }
-  | {
-      email: AuthEmail;
-    }
-  | {
-      phone: AuthPhone;
-    }
-) & {
+export interface AuthLogin {
+  email: AuthEmail;
   password: AuthPassword;
-};
+}

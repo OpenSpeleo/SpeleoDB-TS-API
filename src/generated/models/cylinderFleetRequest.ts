@@ -11,8 +11,6 @@ export interface CylinderFleetRequest {
    * @maxLength 50
    */
   name: string;
-  /** @minLength 1 */
-  created_by?: string;
   /** Optional description of the cylinder fleet */
   description?: string;
   is_active?: boolean;

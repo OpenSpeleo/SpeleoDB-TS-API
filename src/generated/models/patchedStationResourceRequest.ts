@@ -20,22 +20,14 @@ import type { PatchedStationResourceRequestResourceType } from "./patchedStation
 export interface PatchedStationResourceRequest {
   /** Optional description of the resource */
   description?: string;
-  /**
-   * @nullable
-   * @pattern (?:jpg|jpeg|png|gif|bmp|webp|svg|heic|heif|mp4|avi|mov|wmv|flv|webm|pdf|doc|docx|txt|rtf)$
-   */
+  /** @nullable */
   file?: Blob | null;
   /**
    * Thumbnail/preview image for the resource
    * @nullable
    */
   miniature?: Blob | null;
-  /**
-   * * `photo` - Photo
-   * * `video` - Video
-   * * `note` - Note
-   * * `document` - Document
-   */
+  /** Must equal the existing resource type; it cannot be changed. Omitted file/text retains the existing content on update. */
   resource_type?: PatchedStationResourceRequestResourceType;
   /** Text content for notes descriptions */
   text_content?: string;

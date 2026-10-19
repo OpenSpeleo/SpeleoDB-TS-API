@@ -40,5 +40,5 @@ export interface PatchedGISGeometryUpdateRequest {
   /** WGS84 2D coordinates. Polygon has one closed simple outer ring and no holes. Server additionally validates coordinate bounds, topology, and bounding-box area. */
   geojson?: PatchedGISGeometryUpdateRequestGeojson;
   /** @minimum 1 */
-  expected_revision?: number;
+  expected_revision: number;
 }

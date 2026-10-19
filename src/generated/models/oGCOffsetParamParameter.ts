@@ -3,6 +3,6 @@
  */
 
 /**
- * Number of features to skip before returning results. Combine with ``limit`` for paged retrieval.
+ * Number of features to skip before returning results. Combine with ``limit`` for paged retrieval. Omitted or empty values use zero.
  */
 export type OGCOffsetParamParameter = number;

@@ -1,6 +1,10 @@
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
+import {
+  gitReceivePackWithContent,
+  gitUploadPackWithContent,
+} from "../generated/operations";
 import { apiRequest, createApiClient } from "./request";
 import type { ApiOperationMetadata } from "./types";
 
@@ -63,6 +67,102 @@ async function streamingServer(status = 200) {
 }
 
 describe("real fetch transport", () => {
+  it.each([
+    ["upload-pack", gitUploadPackWithContent],
+    ["receive-pack", gitReceivePackWithContent],
+  ] as const)(
+    "sends the optional generated %s body as an empty request",
+    async (_name, invoke) => {
+      let received: { bytes: number; media: string | undefined } | undefined;
+      const baseUrl = await listen((request, response) => {
+        let bytes = 0;
+        request.on("data", (chunk: Buffer) => {
+          bytes += chunk.byteLength;
+        });
+        request.on("end", () => {
+          received = { bytes, media: request.headers["content-type"] };
+          response
+            .writeHead(200, { "Content-Type": "application/x-git-result" })
+            .end("0000");
+        });
+      });
+      const client = createApiClient({ baseUrl });
+      const result = await invoke("project", undefined, undefined, { client });
+      expect(received).toEqual({ bytes: 0, media: "application/octet-stream" });
+      expect(result).toMatchObject({ kind: "documented", status: 200 });
+      expect(result.data).toBeInstanceOf(Blob);
+      expect(await (result.data as Blob).text()).toBe("0000");
+    },
+  );
+
+  it.each([
+    {
+      label: "Blob media",
+      bodyType: "application/x-git-upload-pack-request",
+      header: "*/*",
+      expected: "application/x-git-upload-pack-request",
+      raw: false,
+    },
+    {
+      label: "untyped Blob",
+      bodyType: "",
+      header: "*/*",
+      expected: "application/octet-stream",
+      raw: false,
+    },
+    {
+      label: "wildcard Blob",
+      bodyType: "application/*",
+      header: "*/*",
+      expected: "application/octet-stream",
+      raw: false,
+    },
+    {
+      label: "raw byte view",
+      bodyType: "",
+      header: "*/*",
+      expected: "application/octet-stream",
+      raw: true,
+    },
+    {
+      label: "explicit caller media",
+      bodyType: "application/octet-stream",
+      header: "application/x-git-receive-pack-request",
+      expected: "application/x-git-receive-pack-request",
+      raw: false,
+    },
+  ])(
+    "sends concrete Content-Type and exact opaque bytes for $label",
+    async ({ bodyType, header, expected, raw }) => {
+      const bytes = new Uint8Array([0, 255, 128, 10, 13]);
+      const baseUrl = await listen((request, response) => {
+        const chunks: Buffer[] = [];
+        request.on("data", (chunk: Buffer) => chunks.push(chunk));
+        request.on("end", () => {
+          response.writeHead(200, { "Content-Type": "application/json" }).end(
+            JSON.stringify({
+              media: request.headers["content-type"],
+              bytes: [...Buffer.concat(chunks)],
+            }),
+          );
+        });
+      });
+      const client = createApiClient({ baseUrl });
+      const result = await apiRequest("/opaque", {
+        client,
+        operation,
+        method: "POST",
+        headers: { "Content-Type": header },
+        body: raw ? bytes : new Blob([bytes], { type: bodyType }),
+      });
+      expect(result).toMatchObject({
+        kind: "documented",
+        status: 200,
+        data: { media: expected, bytes: [...bytes] },
+      });
+    },
+  );
+
   it("returns a status-first denial and cancels its unfinished real HTTP body", async () => {
     const stream = await streamingServer(403);
     const client = createApiClient({ baseUrl: stream.baseUrl });

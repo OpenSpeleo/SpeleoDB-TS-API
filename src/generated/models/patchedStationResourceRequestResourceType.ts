@@ -3,10 +3,7 @@
  */
 
 /**
- * * `photo` - Photo
- * * `video` - Video
- * * `note` - Note
- * * `document` - Document
+ * Must equal the existing resource type; it cannot be changed. Omitted file/text retains the existing content on update.
  */
 export type PatchedStationResourceRequestResourceType =
   (typeof PatchedStationResourceRequestResourceType)[keyof typeof PatchedStationResourceRequestResourceType];

@@ -5,6 +5,6 @@
 export interface OGCLink {
   href: string;
   rel: string;
-  type?: string;
-  title?: string;
+  type: string;
+  title: string;
 }

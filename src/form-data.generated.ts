@@ -161,30 +161,30 @@ export function v2_cylinders_partial_updateUrlEncoded(
   ]);
 }
 export function v2_experiments_createMultipart(body?: object): FormData {
-  return unionFormData(body, ["end_date", "start_date"]);
+  return unionFormData(body, []);
 }
 export function v2_experiments_createUrlEncoded(
   body?: object,
 ): URLSearchParams {
-  return unionUrlEncoded(body, ["end_date", "start_date"]);
+  return unionUrlEncoded(body, []);
 }
 export function v2_experiments_updateMultipart(body?: object): FormData {
-  return unionFormData(body, ["end_date", "start_date"]);
+  return unionFormData(body, []);
 }
 export function v2_experiments_updateUrlEncoded(
   body?: object,
 ): URLSearchParams {
-  return unionUrlEncoded(body, ["end_date", "start_date"]);
+  return unionUrlEncoded(body, []);
 }
 export function v2_experiments_partial_updateMultipart(
   body?: object,
 ): FormData {
-  return unionFormData(body, ["end_date", "start_date"]);
+  return unionFormData(body, []);
 }
 export function v2_experiments_partial_updateUrlEncoded(
   body?: object,
 ): URLSearchParams {
-  return unionUrlEncoded(body, ["end_date", "start_date"]);
+  return unionUrlEncoded(body, []);
 }
 export function v2_experiments_permission_detail_createMultipart(
   body?: object,
@@ -284,9 +284,6 @@ export function v2_gis_geometries_permissions_destroyUrlEncoded(
 }
 export function v2_gis_layers_createMultipart(body?: object): FormData {
   return unionFormData(body, []);
-}
-export function v2_gis_layers_createUrlEncoded(body?: object): URLSearchParams {
-  return unionUrlEncoded(body, []);
 }
 export function v2_gis_layers_partial_updateMultipart(body?: object): FormData {
   return unionFormData(body, []);
@@ -714,6 +711,16 @@ export function v2_stations_partial_updateMultipart(body?: object): FormData {
   return unionFormData(body, []);
 }
 export function v2_stations_partial_updateUrlEncoded(
+  body?: object,
+): URLSearchParams {
+  return unionUrlEncoded(body, []);
+}
+export function v2_stations_experiment_records_createMultipart(
+  body?: object,
+): FormData {
+  return unionFormData(body, []);
+}
+export function v2_stations_experiment_records_createUrlEncoded(
   body?: object,
 ): URLSearchParams {
   return unionUrlEncoded(body, []);

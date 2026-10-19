@@ -3,6 +3,13 @@
  */
 
 /**
- * Experiment field UUIDs mapped to their values. Server-owned submitter identity is restored by the server.
+ * Keys must be field UUIDs defined by the experiment. Values must match each definition: string, finite number, boolean, ISO date or datetime string, or a configured select option. Null/empty values are allowed only for optional fields. POST and PUT must provide every required editable field; PATCH merges with existing values. The server restores submitter identity regardless of input.
  */
-export type V2ExperimentRecordsUpdateBody = { [key: string]: unknown };
+export type V2ExperimentRecordsUpdateBody = {
+  /**
+   * Mandatory measurement date, parsed as an ISO date or datetime.
+   * @minLength 1
+   */
+  "00000000-0000-0000-0000-000000000001": string;
+  [key: string]: unknown;
+};

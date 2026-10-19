@@ -9,7 +9,6 @@ export interface PatchedStationLogEntryRequest {
   /**
    * Any relevant file (sketch, lab sheet, sensor data, etc.).
    * @nullable
-   * @pattern (?:jpg|jpeg|png|gif|bmp|webp|svg|heic|heif|mp4|avi|mov|wmv|flv|webm|pdf|doc|docx|txt|rtf)$
    */
   attachment?: Blob | null;
   /** Detailed field notes, observations, or measurements. */

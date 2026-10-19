@@ -3,6 +3,6 @@
  */
 
 /**
- * Either a date-time or an interval (RFC 3339 §5.6). The value is validated but cave-survey collections have no temporal extent, so all features match.
+ * Either a date-time or an interval (RFC 3339 §5.6). The value is validated but cave-survey collections have no temporal extent, so all features match. An empty value is ignored.
  */
 export type OGCDatetimeParamParameter = string;

@@ -4,5 +4,6 @@
 
 /**
  * The refresh token.
+ * @minLength 1
  */
 export type AuthRefreshToken = string;

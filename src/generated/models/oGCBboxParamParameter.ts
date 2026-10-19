@@ -3,6 +3,6 @@
  */
 
 /**
- * Only features that have a geometry that intersects the bounding box are returned. The bounding box is provided as four (CRS84) or six (CRS84h) numbers separated by commas: ``min_lon, min_lat, [min_z,] max_lon, max_lat[, max_z]``.
+ * Only features that have a geometry that intersects the bounding box are returned. The bounding box is provided as four (CRS84) or six (CRS84h) numbers separated by commas: ``min_lon, min_lat, [min_z,] max_lon, max_lat[, max_z]``. Values must be finite, longitude within [-180, 180], latitude within [-90, 90], and minimum latitude/height at most the maximum. Reversed longitude denotes an antimeridian crossing. An empty value applies no spatial filter.
  */
 export type OGCBboxParamParameter = number[];

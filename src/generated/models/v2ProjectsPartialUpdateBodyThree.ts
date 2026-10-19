@@ -24,8 +24,6 @@ export type V2ProjectsPartialUpdateBodyThree = {
    * @pattern ^(?:[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Pp][Uu][Bb][Ll][Ii][Cc])$
    */
   visibility?: string;
-  /** @minLength 1 */
-  created_by?: string;
   /**
    * Case-insensitive choice: ARIANE, COMPASS, STICKMAPS, THERION, WALLS, OTHER
    * @pattern ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
@@ -47,8 +45,8 @@ export type V2ProjectsPartialUpdateBodyThree = {
   color?: string;
   /** Exclude GeoJSON from the project */
   exclude_geojson?: boolean;
-  latitude?: string | null | number;
-  longitude?: string | null | number;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
   is_active?: boolean;
   fork_from?: string | null;
 };

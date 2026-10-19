@@ -3,7 +3,11 @@
  */
 
 export interface ProjectUploadRequestRequest {
-  /** @minItems 1 */
+  /**
+   * Compass ZIP uploads accept exactly one .zip file.
+   * @minItems 1
+   * @maxItems 20
+   */
   artifact: (Blob | File)[];
   /** @minLength 1 */
   message: string;

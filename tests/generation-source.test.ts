@@ -39,7 +39,11 @@ async function fixture(
   directories.push(directory);
   await mkdir(path.join(directory, "scripts"));
   await mkdir(path.join(directory, "src/generated"), { recursive: true });
-  for (const name of ["generate.mjs", "openapi-source.mjs"]) {
+  for (const name of [
+    "generate.mjs",
+    "openapi-source.mjs",
+    "openapi-scope.mjs",
+  ]) {
     await copyFile(
       path.join(root, "scripts", name),
       path.join(directory, "scripts", name),
@@ -164,9 +168,8 @@ describe("single backend schema provenance", () => {
   });
 });
 
-async function generationFixture() {
-  const bytes = await loadOpenApiSchema(root);
-  const directory = await fixture(bytes);
+async function generationFixture(bytes?: Buffer) {
+  const directory = await fixture(bytes ?? (await loadOpenApiSchema(root)));
   for (const entry of [
     "scripts",
     "src/runtime",
@@ -190,21 +193,100 @@ async function generationFixture() {
   return { directory, temporary };
 }
 
-function generateFixture(directory: string, temporary: string) {
-  return spawnSync(process.execPath, ["scripts/generate.mjs", "--check"], {
-    cwd: directory,
-    env: {
-      ...process.env,
-      TMPDIR: temporary,
-      SPELEODB_OPENAPI_PATH: path.join(directory, "producer-export"),
+function generateFixture(directory: string, temporary: string, check = true) {
+  return spawnSync(
+    process.execPath,
+    ["scripts/generate.mjs", ...(check ? ["--check"] : [])],
+    {
+      cwd: directory,
+      env: {
+        ...process.env,
+        TMPDIR: temporary,
+        SPELEODB_OPENAPI_PATH: path.join(directory, "producer-export"),
+      },
+      encoding: "utf8",
+      timeout: 110_000,
+      maxBuffer: 10 * 1024 * 1024,
     },
-    encoding: "utf8",
-    timeout: 110_000,
-    maxBuffer: 10 * 1024 * 1024,
-  });
+  );
 }
 
 describe("generation isolation", () => {
+  it("excludes only obsolete SpeleoDB v1 paths through the actual generator pipeline", async () => {
+    const operation = (operationId: string) => ({
+      operationId,
+      responses: {
+        "200": {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { ready: { type: "boolean" } },
+              },
+            },
+          },
+        },
+      },
+    });
+    const document = {
+      openapi: "3.0.3",
+      info: { title: "SDK scope regression", version: "1" },
+      paths: {
+        "/api/v1/obsolete/": {
+          post: {
+            ...operation("obsolete_v1"),
+            requestBody: {
+              content: {
+                "multipart/form-data": {
+                  schema: {
+                    type: "object",
+                    properties: { obsolete: { type: "string" } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        "/api/v1": { get: operation("obsolete_mount") },
+        "/_allauth/browser/v1/config": {
+          get: operation("auth_browser_config"),
+        },
+        "/api/auth/app/v1/config": { get: operation("auth_app_config") },
+        "/api/v10/current": { get: operation("future_api_config") },
+      },
+    };
+    const { directory, temporary } = await generationFixture(
+      Buffer.from(JSON.stringify(document)),
+    );
+    const result = generateFixture(directory, temporary, false);
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const operations = await readFile(
+      path.join(directory, "src/generated/operations.ts"),
+      "utf8",
+    );
+    const forms = await readFile(
+      path.join(directory, "src/form-data.generated.ts"),
+      "utf8",
+    );
+    expect(operations).not.toContain("/api/v1/");
+    expect(operations).not.toContain("obsolete");
+    expect(forms).not.toContain("obsolete");
+    for (const route of [
+      "/_allauth/browser/v1/config",
+      "/api/auth/app/v1/config",
+      "/api/v10/current",
+    ])
+      expect(operations).toContain(route);
+    for (const name of [
+      "authBrowserConfig",
+      "authAppConfig",
+      "futureApiConfig",
+    ])
+      expect(operations).toContain(`export const ${name}`);
+  }, 120_000);
+
   it("detects stale generated filenames without rewriting sources and removes temporary schema data", async () => {
     const { directory, temporary } = await generationFixture();
     const existing = await readFile(

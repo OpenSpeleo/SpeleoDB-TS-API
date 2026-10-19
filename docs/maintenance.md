@@ -18,17 +18,18 @@ dependencies. Keep the Prettier hook revision aligned with the package's
 Prettier version when updating either, so local checks and hooks apply the same
 formatter.
 
-| File or directory              | Owner and purpose                                                   |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `openapi-source.json`          | Immutable backend revision and exact export SHA-256; no schema copy |
-| `orval.config.mjs`             | Pinned generator configuration and output layout                    |
-| `scripts/openapi-source.mjs`   | Loads and verifies the sole backend schema for temporary generation |
-| `scripts/openapi-metadata.mjs` | Derives response decoding and form field policies from the snapshot |
-| `src/generated/`               | Orval output; regenerate instead of editing                         |
-| `src/form-data.generated.ts`   | Generated form mutator wrappers; regenerate instead of editing      |
-| `src/runtime/`                 | Handwritten, framework-neutral HTTP runtime and regression tests    |
-| `src/index.ts`                 | Public source exports                                               |
-| `bun.lock`                     | Standalone package dependency graph                                 |
+| File or directory              | Owner and purpose                                                       |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `openapi-source.json`          | Immutable backend revision and exact export SHA-256; no schema copy     |
+| `orval.config.mjs`             | Pinned generator configuration and output layout                        |
+| `scripts/openapi-source.mjs`   | Loads and verifies the sole backend schema for temporary generation     |
+| `scripts/openapi-scope.mjs`    | Excludes only the obsolete SpeleoDB `/api/v1` mount from SDK generation |
+| `scripts/openapi-metadata.mjs` | Derives response decoding and form field policies from the snapshot     |
+| `src/generated/`               | Orval output; regenerate instead of editing                             |
+| `src/form-data.generated.ts`   | Generated form mutator wrappers; regenerate instead of editing          |
+| `src/runtime/`                 | Handwritten, framework-neutral HTTP runtime and regression tests        |
+| `src/index.ts`                 | Public source exports                                                   |
+| `bun.lock`                     | Standalone package dependency graph                                     |
 
 Endpoint paths, parameter names and API DTOs must not be duplicated in runtime
 code. New application state, persistence models, offline queues and UI errors
@@ -46,9 +47,45 @@ runtime calls use generated TypeScript and do not download the schema.
 
 Change endpoint behavior, serializer annotations and contract tests in the web
 repository first. Its
-[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/93b445c7c5c7d69823a849806ea05b78058edec1/docs/api-contract.md)
+[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/366c402ee9a60bd9df7fe6149427073f20d9f356/docs/api-contract.md)
 describes route inventory, allauth and OGC composition, error/media auditing and
-backend verification. Legacy v1 is intentionally excluded from this SDK.
+backend verification. SpeleoDB's obsolete `/api/v1` mount is intentionally
+excluded from this SDK; authentication's own `/v1` routes remain supported.
+
+### Exact SDK scope and generated-source ownership
+
+The SDK applies its own scope filter even if the supplied backend export still
+contains obsolete SpeleoDB operations. A path is excluded only when
+`path === "/api/v1"` or `path.startsWith("/api/v1/")`. The rule retains
+`/_allauth/browser/v1/...`, `/_allauth/app/v1/...`, `/api/auth/browser/v1/...`,
+and `/api/auth/app/v1/...`. It also does not confuse `/api/v10/...` with the
+obsolete mount. Never use a substring search for `v1` or remove all APIs whose
+URLs contain that version segment.
+
+`scripts/generate.mjs` first loads and hash-verifies the complete canonical
+export. Only afterward does `scripts/openapi-scope.mjs` create the document
+passed to Orval. This filtered document is serialized as JSON, which is valid
+YAML, inside the existing disposable generation directory. The backend's
+canonical bytes are preserved. The SHA-256 in `openapi-source.json` always
+describes the full original export, including any excluded paths; it never
+describes this temporary projection. No filtered schema is checked in or
+published.
+
+The response and form metadata projectors apply the same production scope rule.
+The test oracle independently applies the exact mount-prefix exclusion and
+compares the resulting inventory with every exported generated callable. A real
+Orval fixture includes obsolete SpeleoDB paths, both supported authentication
+mounts, and a similar `/api/v10` prefix to protect these boundaries. This SDK
+filter does not remove or alter any backend route.
+
+All files under `src/generated/` and `src/form-data.generated.ts` must be
+created through `bun run generate`. Never hand-edit an endpoint, DTO, generated
+URL, form wrapper, or generated response metadata—even to fix a small type or
+formatting error. Correct the backend exporter or the handwritten generation
+inputs, regenerate, then review the result. CI and prek's `generated-sdk-sync`
+hook run `generate:check`, which compares exact filenames and bytes. A manual
+change must fail that check; do not disable the check or preserve the manual
+change by copying it into a temporary generation fixture.
 
 In a standalone web checkout, use its configured environment and dependencies:
 
@@ -105,6 +142,21 @@ the reviewed export's actual digest. Supply that file explicitly from the SDK
 checkout:
 
 ```sh
+export SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml
+bun -e '
+import { createHash } from "node:crypto";
+const bytes = await Bun.file(process.env.SPELEODB_OPENAPI_PATH).arrayBuffer();
+await Bun.write("openapi-source.json", JSON.stringify({
+  revision: null,
+  sha256: createHash("sha256").update(new Uint8Array(bytes)).digest("hex"),
+}, null, 2) + "\n");
+'
+```
+
+Review that source-record change alongside the backend export, then regenerate
+and verify using that same explicit input:
+
+```sh
 SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run generate
 SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run check
 SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml prek run -a
@@ -125,6 +177,30 @@ with a 30-second deadline, rejects HTTP failures and redirects, and verifies the
 SHA-256 before running Orval. A mismatch never rewrites the source record or
 generated output. The downloaded file exists only inside the generation
 process's OS temporary directory, which is cleaned on success or failure.
+
+To record the published revision without changing the reviewed canonical hash:
+
+```sh
+export SPELEODB_BACKEND_REVISION=the_actual_40_character_lowercase_commit
+bun -e '
+const revision = process.env.SPELEODB_BACKEND_REVISION;
+if (!revision || !/^[a-f0-9]{40}$/.test(revision)) {
+  throw new Error("Supply the actual published backend commit revision.");
+}
+const source = await Bun.file("openapi-source.json").json();
+await Bun.write("openapi-source.json", JSON.stringify({
+  revision, sha256: source.sha256,
+}, null, 2) + "\n");
+'
+unset SPELEODB_OPENAPI_PATH
+bun run generate:check
+```
+
+Replace the placeholder with the published commit, never a branch or an invented
+SHA. The final command downloads that exact upstream revision and verifies its
+bytes before comparing output. A locally successful generation is insufficient
+if this remote verification fails. Keep the producer documentation link and
+release description aligned with the recorded revision.
 
 The web repository's prek configuration regenerates its snapshot when watched
 API sources change. The SDK's local generation check compares generated source
@@ -181,11 +257,23 @@ body and multipart generation; JSON serialization cannot carry bytes. Do not
 advertise a binary upload under urlencoded media merely because a generic
 framework parser is installed.
 
-The configuration derives operation decoding metadata from the full snapshot. Do
-not maintain a second endpoint table, generate metadata from stale schemas, or
-patch URLs after generation. Orval upgrades can alter names, optionality,
-serialization and generated runtime calls even when schema bytes are unchanged;
-review upgrades as SDK changes and exercise representative consumer calls.
+Git protocol uploads have opaque binary variants such as
+`WithXGitUploadPackRequest`, `WithXGitReceivePackRequest`, and `WithBlob`. The
+wildcard request representation uses `WithContent`. Supply Blob bytes directly;
+generated code must not JSON-stringify a packet-line stream. A wildcard in
+OpenAPI describes accepted media, not a literal HTTP `Content-Type`. The runtime
+uses a Blob's concrete media type for that variant, falling back to
+`application/octet-stream`; an explicit concrete per-call header takes
+precedence. Response MIME ranges likewise match actual concrete response
+headers, and declared binary streams stay Blob values even if their concrete
+header contains `json` or begins with `text/`.
+
+The configuration derives operation decoding metadata from the supported paths
+of the verified snapshot. Do not maintain a second endpoint table, generate
+metadata from stale schemas, or patch URLs after generation. Orval upgrades can
+alter names, optionality, serialization and generated runtime calls even when
+schema bytes are unchanged; review upgrades as SDK changes and exercise
+representative consumer calls.
 
 Orval 8.43's default multipart serialization for `oneOf`/`anyOf` request bodies
 references Node's Buffer type. Its field serializer also passes nested objects
@@ -206,6 +294,15 @@ form inputs are JSON-encoded strings in the schema: pass `JSON.stringify(value)`
 unchanged. Arrays of ordinary form values use repeated fields, scalars become
 strings, and multipart files preserve their bytes. Unsupported nested create
 collections are excluded from form schemas; use the JSON variant instead.
+
+Some form request unions permit a null field only in one member, such as a note
+with no uploaded file versus a document requiring a file. The generated wrapper
+retains every member's permitted empty-value null policy; the generated union
+type still determines which payload is valid. `x-json-schema` documents the
+decoded structure of a JSON text field while its actual generated input remains
+a string. DMP Doctor therefore receives `data: JSON.stringify(configuration)` as
+a text part, alongside the separate uploaded file. Do not convert such a field
+to a JSON Blob or add a part content type: that changes how Django parses it.
 
 If upgrading Orval, test omission versus clearing, JSON strings, primitive
 unions, repeated values and file uploads in both form media before changing the
@@ -233,7 +330,7 @@ hash-verifying source loader used by generation. It independently derives the
 operation, parameter, request-media and response-status/media inventory.
 `tests/generated-contract.test.ts` sends every generated callable through the
 public SDK and real fetch to an owned loopback HTTP server. Currently this means
-322 canonical operations, 525 request-media callables and 1,148 declared
+376 supported operations, 584 request-media callables and 1,868 declared
 status/media cases. Each callable is checked against the entire canonical
 response metadata, not only the response selected for its request test.
 Undeclared statuses and media are tested for every operation as well.
@@ -246,6 +343,12 @@ byte preservation. These payloads are serialization witnesses; they are **not**
 evidence that invented business DTOs satisfy backend validation. Real endpoint
 behavior and response-schema validity remain the web backend's responsibility
 and are verified by its observed contract report and API tests.
+
+Raw Git request witnesses contain NUL, invalid UTF-8 bytes, and ordinary UTF-8
+text so accidental JSON serialization or string conversion cannot pass. Wildcard
+response witnesses use concrete MIME types, including JSON and text headers over
+opaque binary content. HTML authentication failures are exercised as text at
+their documented status, rather than being treated as undocumented JSON errors.
 
 Inventory assertions fail for missing or extra generated callables. The adapter
 also fails on unfamiliar signature, media, parameter serialization or response
@@ -368,6 +471,80 @@ operations or optional fields can be a minor release; behavior-preserving fixes
 can be patches. While the package is `0.x`, communicate breaking changes clearly
 and use a new minor version rather than quietly shipping them as a patch.
 
+### Migrating from 0.2.x to 0.3.0
+
+This release corrects the generated contract to match existing backend behavior.
+Several corrections change callable signatures and required inputs, so consumers
+must migrate before adopting the new exact package version.
+
+DRF's optional `format` query selector now appears even on endpoints whose only
+machine renderer is JSON. Where a function previously had no query parameters,
+Orval inserts an optional `params` argument before the final request options.
+Pass `undefined` when no query parameters are needed; the client still belongs
+in the final argument:
+
+```ts
+// 0.2.x
+await v2ProjectsList({ client });
+
+// 0.3.0
+await v2ProjectsList(undefined, { client });
+// Or explicitly select the documented machine renderer:
+await v2ProjectsList({ format: "json" }, { client });
+```
+
+The same rule applies after path and body arguments for writes. Inspect each
+generated signature rather than adding an argument to authentication functions
+or to an operation that already had a query-parameter object. Keep all existing
+query values in that object. Review runtime call sites as well as type errors:
+passing options into a newly inserted query slot can otherwise encode them in
+the URL and leave the actual call without its client.
+
+File-only endpoints no longer advertise JSON or URL-encoded request variants
+that cannot carry the required uploaded file. When only multipart remains, Orval
+uses the base operation name—for example `v2GisLayersCreate` replaces the
+previous `v2GisLayersCreateWithFormData` callable. Import the surviving
+generated function and pass File/Blob values through its typed body. Optional
+file fields on other endpoints retain their supported representations; choose
+from the actual generated signatures.
+
+Input corrections require the saved `expected_revision` when updating GIS
+geometry, including PATCH; retain the revision obtained when loading the
+geometry instead of inventing one. Experiment record creation and replacement
+must include every required editable field, including Measurement Date, while
+PATCH merges existing values. The server owns submitter identity. Station
+resource creation now distinguishes a note with nonempty text from a photo,
+video, or document with a required uploaded file. Form schemas exclude nested
+create collections that the backend cannot parse; use the JSON variant to send
+those collections. Project and other server-owned creator fields no longer
+appear as writable inputs.
+
+Experiment record responses also permit nonempty string arrays for values
+created through form requests. This widening applies only to responses; JSON
+writes still accept the documented scalar field values. The current backend
+preserves the submitter email as an array on form-created records, which causes
+later PUT/PATCH validation to fail. Use JSON creation for records that must
+remain editable; the SDK reflects this existing behavior without normalizing the
+returned data.
+
+Browser authentication errors now include documented HTML responses, and
+framework negotiation/parser failures appear at their actual statuses. After
+narrowing `kind` and `status`, inspect `typeof result.data` when a status
+permits both JSON and text. Do not assume every documented error is an object.
+Binary results, redirects, nullable clears and JSON-encoded text form fields
+preserve their actual wire representation.
+
+The SDK also includes the canonical `/api/auth/...` authentication aliases, Git
+smart-HTTP operations and machine-discovery endpoints. These additions do not
+restore obsolete SpeleoDB `/api/v1` support. Authentication's own `v1` segments
+remain supported. The generator continues to exclude only the exact obsolete
+SpeleoDB mount.
+
+Update each standalone consumer's exact dependency to `0.3.0` after publication,
+refresh its own lockfile, then run its types, tests and build outside the
+monorepo. Do not edit generated SDK files or weaken the source contract to
+preserve an outdated application call signature.
+
 ### Migrating from 0.1.x to 0.2.0
 
 Cylinder installation creation now requires `project` in JSON, multipart and
@@ -429,7 +606,7 @@ bun pm pack --destination "$archive_dir" --ignore-scripts
 mkdir "$archive_dir/consumer"
 cd "$archive_dir/consumer"
 printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
-bun add "$archive_dir/speleodb-api-0.2.0.tgz"
+bun add "$archive_dir/speleodb-api-0.3.0.tgz"
 bun add --dev typescript@6.0.3
 cat > smoke.ts <<'TS'
 import { createApiClient, v2ProjectsList } from '@speleodb/api';
@@ -442,7 +619,7 @@ const client = createApiClient({
     headers: new Headers({ 'content-type': 'application/json' }),
   }),
 });
-const response = await v2ProjectsList({ client });
+const response = await v2ProjectsList(undefined, { client });
 if (response.kind !== 'documented' || response.status !== 200) {
   throw new Error('Archive operation failed');
 }
@@ -508,8 +685,8 @@ export or hash mismatch before the publish job can run.
 After the required tests and repository-local prek checks pass, inspect the
 reviewed archive and commit the same source and documentation. When publication
 and Git actions are authorized, push the reviewed SDK commit and its
-`v<package.json version>` tag to its own upstream. For version `0.2.0`, the tag
-must be `v0.2.0`; the workflow rejects a mismatch. The publish job waits for
+`v<package.json version>` tag to its own upstream. For version `0.3.0`, the tag
+must be `v0.3.0`; the workflow rejects a mismatch. The publish job waits for
 `verify`, performs its own frozen install and build, and runs
 `npm publish --access public` from that tagged checkout. It packages the tagged
 files itself; the local archive is the reviewed candidate, not a separate
@@ -519,7 +696,7 @@ Wait for the tag workflow's successful publish job, then query the actual
 registry version:
 
 ```sh
-bun pm view @speleodb/api@0.2.0 name version dist.integrity
+bun pm view @speleodb/api@0.3.0 name version dist.integrity
 ```
 
 Use the actual release version. Inspect the published archive's file list,

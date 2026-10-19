@@ -6,10 +6,11 @@ import type { V2ToolsXls2compassCreateBodyUnit } from "./v2ToolsXls2compassCreat
 
 export type V2ToolsXls2compassCreateBody = {
   /**
-   * Rows in survey order. Every measured row supplies length and azimuth; The final row supplies station/depth and empty measurement cells. LRUD cells accept numeric values or empty/null cells.
+   * Rows in survey order. Every measured row supplies length and azimuth; LRUD cells accept numeric values or empty/null cells. All rows except the last must use the measured-row variant; only the last uses the terminal variant. OpenAPI 3.0 cannot express that positional rule. The terminal row supplies station/depth and falsey measurement cells. Compass LRUD keys are optional. Length must cover the absolute depth difference to the next row; the normalized difference must be between -1000 and 1000.
    * @minItems 2
    */
   shots: V2ToolsXls2compassCreateBodyShotsItem[];
+  /** Survey date must not be in the future. */
   survey_date: string;
   unit: V2ToolsXls2compassCreateBodyUnit;
   /**
@@ -28,6 +29,8 @@ export type V2ToolsXls2compassCreateBody = {
    * @nullable
    */
   comment: string | null;
-  latitude: number | string;
-  longitude: number | string;
+  /** WGS84 coordinate. Numeric text is coerced before the same coordinate bounds are checked. */
+  latitude: number | string | boolean;
+  /** WGS84 coordinate. Numeric text is coerced before the same coordinate bounds are checked. */
+  longitude: number | string | boolean;
 };

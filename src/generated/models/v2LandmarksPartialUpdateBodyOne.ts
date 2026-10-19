@@ -27,8 +27,8 @@ export type V2LandmarksPartialUpdateBodyOne = {
    * * `NOGO` - No go
    */
   icon?: V2LandmarksPartialUpdateBodyOneIcon;
-  /** Landmark latitude coordinate */
-  latitude?: string | number;
-  /** Landmark longitude coordinate */
-  longitude?: string | number;
+  /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-90, 90]. */
+  latitude?: number | boolean | string;
+  /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-180, 180]. */
+  longitude?: number | boolean | string;
 };

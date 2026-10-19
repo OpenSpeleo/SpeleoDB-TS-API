@@ -20,6 +20,4 @@ export interface LandmarkCollectionRequest {
    * @pattern ^#[0-9a-fA-F]{6}$
    */
   color?: string;
-  /** @minLength 1 */
-  created_by?: string;
 }

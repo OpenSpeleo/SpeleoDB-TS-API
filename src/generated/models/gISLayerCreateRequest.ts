@@ -32,6 +32,5 @@ export interface GISLayerCreateRequest {
    * @pattern ^#[0-9a-fA-F]{6}$
    */
   color?: string;
-  /** @pattern (?:kml|kmz|json|geojson|topojson|zip)$ */
   source_file: Blob | File;
 }

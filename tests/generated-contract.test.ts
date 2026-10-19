@@ -10,7 +10,9 @@ import type {
 } from "../src/index";
 import {
   argumentsFor,
+  concreteMedia,
   operations,
+  permitsEmptyNull,
   responses,
   variants,
 } from "./contract-cases";
@@ -222,18 +224,23 @@ function multipartTypes(
   return types;
 }
 
-async function assertBody(
-  request: Received,
-  body: unknown,
-  media: string | undefined,
-) {
+async function assertBody(request: Received, body: unknown, variant: Variant) {
+  const media = variant.media;
   if (!media) {
     expect(request.bytes.byteLength).toBe(0);
     return;
   }
-  expect(request.headers.get("content-type")?.split(";")[0]).toBe(media);
+  expect(request.headers.get("content-type")?.split(";")[0]).toBe(
+    concreteMedia(media),
+  );
   if (media === "application/json") {
     expect(JSON.parse(request.bytes.toString("utf8"))).toEqual(body);
+    return;
+  }
+  if (media !== "multipart/form-data" && body instanceof Blob) {
+    expect(new Uint8Array(request.bytes)).toEqual(
+      new Uint8Array(await body.arrayBuffer()),
+    );
     return;
   }
   const entries =
@@ -278,6 +285,11 @@ async function assertBody(
           new Uint8Array(await value.arrayBuffer()),
         );
       } else {
+        if (value === null) {
+          expect(permitsEmptyNull(variant.schema ?? {}, name)).toBe(true);
+          expect(actual).toBe("");
+          continue;
+        }
         expect(actual).toBe(
           typeof value === "object" ? JSON.stringify(value) : String(value),
         );
@@ -316,9 +328,9 @@ function assertUrl(
 
 describe("canonical OpenAPI inventory and generated wire behavior", () => {
   it("covers every canonical operation, callable media variant and status/media declaration", () => {
-    expect(operations).toHaveLength(322);
-    expect(variants).toHaveLength(525);
-    expect(responses).toHaveLength(1148);
+    expect(operations).toHaveLength(376);
+    expect(variants).toHaveLength(584);
+    expect(responses).toHaveLength(1868);
     expect(new Set(operations.map((operation) => operation.id)).size).toBe(
       operations.length,
     );
@@ -347,7 +359,7 @@ describe("canonical OpenAPI inventory and generated wire behavior", () => {
       assertUrl(variant, request, input);
       for (const [name, value] of Object.entries(input.headers))
         expect(request.headers.get(name)).toBe(value);
-      await assertBody(request, input.body, variant.media);
+      await assertBody(request, input.body, variant);
       expect(metadata).toEqual(variant.operation.metadata);
       await assertDecoded(result, representative(variant), "documented");
     },
@@ -382,6 +394,20 @@ describe("canonical OpenAPI inventory and generated wire behavior", () => {
     },
   );
 
+  it.each(responses.filter((response) => response.declaredMedia === "*/*"))(
+    "$label preserves opaque bytes under concrete JSON and text media types",
+    async (response) => {
+      for (const media of ["application/json", "text/plain"]) {
+        const reply = { ...response, media };
+        const { result } = await exchange(
+          response.operation.variants[0]!,
+          reply,
+        );
+        await assertDecoded(result, reply, "documented");
+      }
+    },
+  );
+
   it.each(operations)(
     "$id preserves undeclared HTTP status without claiming a DTO",
     async (operation) => {
@@ -399,9 +425,16 @@ describe("canonical OpenAPI inventory and generated wire behavior", () => {
   it.each(operations)(
     "$id rejects an undeclared media type at a declared status",
     async (operation) => {
-      const status = operation.responses.find(
-        (response) => ![204, 205, 304].includes(response.status),
-      )?.status;
+      const status = operation.responses.find((response) => {
+        const content =
+          operation.metadata.responses[String(response.status)]!.content;
+        return (
+          ![204, 205, 304].includes(response.status) &&
+          !("*/*" in content) &&
+          !("application/*" in content) &&
+          !("application/x-contract-witness" in content)
+        );
+      })?.status;
       if (status === undefined)
         throw new Error(
           `No response permitting a body mismatch witness: ${operation.id}`,

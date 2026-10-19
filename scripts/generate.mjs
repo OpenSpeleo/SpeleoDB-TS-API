@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 import { loadOpenApiSchema } from "./openapi-source.mjs";
+import { sdkDocument } from "./openapi-scope.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const check = process.argv.includes("--check");
@@ -33,13 +34,15 @@ try {
       recursive: true,
     });
   }
-  await writeFile(path.join(temporary, "OpenAPI.yaml"), bytes);
+  const schema = sdkDocument(Bun.YAML.parse(bytes.toString("utf8")));
+  // JSON is valid YAML. This disposable SDK projection leaves the producer's
+  // verified bytes and provenance untouched, including excluded legacy routes.
+  await writeFile(path.join(temporary, "OpenAPI.yaml"), JSON.stringify(schema));
   const { format } = await import("prettier");
   const { formMutators } = await import("./openapi-metadata.mjs");
   const require = createRequire(import.meta.url);
   const cli = require.resolve("orval/bin/orval");
   const formPath = path.join(temporary, "src/form-data.generated.ts");
-  const schema = Bun.YAML.parse(bytes.toString("utf8"));
   await writeFile(
     formPath,
     await format(formMutators(schema), { parser: "typescript" }),

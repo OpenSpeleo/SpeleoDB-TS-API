@@ -20,6 +20,8 @@ export interface Schema {
   readOnly?: boolean;
   minItems?: number;
   maxItems?: number;
+  "x-json-schema"?: Schema;
+  "x-drf-null-as-empty"?: boolean;
 }
 interface Parameter {
   $ref?: string;
@@ -106,6 +108,7 @@ export interface ResponseCase {
   operation: ContractOperation;
   status: number;
   media: string | undefined;
+  declaredMedia: string | undefined;
   codec: Codec;
   label: string;
 }
@@ -127,7 +130,21 @@ const suffixes: Record<string, string> = {
   "application/json": "WithJson",
   "application/x-www-form-urlencoded": "WithUrlEncoded",
   "multipart/form-data": "WithFormData",
+  "application/octet-stream": "WithBlob",
+  "application/x-git-upload-pack-request": "WithXGitUploadPackRequest",
+  "application/x-git-receive-pack-request": "WithXGitReceivePackRequest",
+  "*/*": "WithContent",
 };
+
+/** A response Content-Type is concrete even when OpenAPI permits a MIME range. */
+export function concreteMedia(media: string | undefined): string | undefined {
+  if (media === "*/*") return "application/x-contract-binary";
+  if (media?.endsWith("/*")) {
+    const family = media.slice(0, -1);
+    return family + (family === "text/" ? "plain" : "x-contract-binary");
+  }
+  return media;
+}
 const methods = [
   "get",
   "post",
@@ -140,6 +157,9 @@ const methods = [
 ] as const;
 export const operations: ContractOperation[] = [];
 for (const [path, item] of Object.entries(document.paths)) {
+  // Independent scope oracle: only SpeleoDB's obsolete mount is excluded.
+  // Authentication v1 and unrelated names such as /api/v10 remain in scope.
+  if (path === "/api/v1" || path.startsWith("/api/v1/")) continue;
   for (const method of methods) {
     const original = item[method];
     if (!original) continue;
@@ -230,7 +250,8 @@ for (const [path, item] of Object.entries(document.paths)) {
         operation.responses.push({
           operation,
           status: Number(status),
-          media: type,
+          media: concreteMedia(type),
+          declaredMedia: type,
           codec: type ? expected[type.toLowerCase()]! : "empty",
           label: `${operation.id} ${status} ${type ?? "empty"}`,
         });
@@ -251,6 +272,10 @@ export function witness(
   if (depth > 18)
     throw new Error("Recursive request witness requires an explicit strategy.");
   const schema = resolve(original);
+  if (schema["x-json-schema"])
+    return JSON.stringify(
+      witness(schema["x-json-schema"], undefined, depth + 1),
+    );
   if (schema.const !== undefined) return schema.const;
   if (schema.enum) return schema.enum.find((value) => value !== null) ?? null;
   if (schema.allOf) {
@@ -274,19 +299,17 @@ export function witness(
   const type = Array.isArray(schema.type)
     ? schema.type.find((type) => type !== "null")
     : schema.type;
-  if (schema.format === "binary")
+  if (schema.format === "binary") {
+    const bytes = [
+      new TextEncoder().encode("Café 🦇\u0000\n"),
+      new Uint8Array([0xff, 0x80, 0]),
+    ];
     return media === "multipart/form-data"
-      ? new File(
-          [
-            new TextEncoder().encode("Café 🦇\u0000\n"),
-            new Uint8Array([0xff, 0x80, 0]),
-          ],
-          "survey café.txt",
-          {
-            type: "application/octet-stream",
-          },
-        )
-      : "binary-string-witness";
+      ? new File(bytes, "survey café.txt", { type: "application/octet-stream" })
+      : new Blob(bytes, {
+          type: concreteMedia(media) ?? "application/octet-stream",
+        });
+  }
   switch (type) {
     case "string":
       return "Café 🦇 /?&=+%";
@@ -323,6 +346,17 @@ export function witness(
     default:
       throw new Error(`Extend request witness for schema type ${type}`);
   }
+}
+
+/** Read only the canonical transport policy; never use generated form metadata. */
+export function permitsEmptyNull(original: Schema, field: string): boolean {
+  const schema = resolve(original);
+  if (schema.properties?.[field]?.["x-drf-null-as-empty"] === true) return true;
+  return [
+    ...(schema.anyOf ?? []),
+    ...(schema.oneOf ?? []),
+    ...(schema.allOf ?? []),
+  ].some((part) => permitsEmptyNull(part, field));
 }
 
 export function argumentsFor(variant: Variant, omitOptionalQuery = false) {

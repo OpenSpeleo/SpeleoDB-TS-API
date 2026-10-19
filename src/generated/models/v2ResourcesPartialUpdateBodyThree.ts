@@ -22,12 +22,7 @@ export type V2ResourcesPartialUpdateBodyThree = {
   description?: string;
   file?: Blob | File | null | string;
   miniature?: Blob | File | null | string;
-  /**
-   * * `photo` - Photo
-   * * `video` - Video
-   * * `note` - Note
-   * * `document` - Document
-   */
+  /** Must equal the existing resource type; it cannot be changed. Omitted file/text retains the existing content on update. */
   resource_type?: V2ResourcesPartialUpdateBodyThreeResourceType;
   /** Text content for notes descriptions */
   text_content?: string;

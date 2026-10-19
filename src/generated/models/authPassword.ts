@@ -4,5 +4,6 @@
 
 /**
  * The password.
+ * @minLength 1
  */
 export type AuthPassword = string;

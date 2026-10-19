@@ -3,8 +3,8 @@
  */
 
 /**
- * Values keyed by experiment field UUID; validated using that experiment's field definitions.
+ * Values keyed by experiment field UUID; validated using that experiment's field definitions. Form-created records preserve text values, including the submitter email, as nonempty arrays. Their preserved submitter array causes subsequent PUT/PATCH validation to fail.
  */
 export type ExperimentRecordData = {
-  [key: string]: string | null | number | boolean;
+  [key: string]: string | null | number | boolean | string[];
 };

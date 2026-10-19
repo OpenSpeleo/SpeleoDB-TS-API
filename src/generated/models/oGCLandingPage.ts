@@ -4,7 +4,7 @@
 import type { OGCLink } from "./oGCLink";
 
 export interface OGCLandingPage {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   links: OGCLink[];
 }

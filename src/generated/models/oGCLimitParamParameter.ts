@@ -3,6 +3,6 @@
  */
 
 /**
- * Maximum number of features to return in the response. Defaults to unlimited (capped at the server maximum). When set, the response includes a ``rel:next`` link if more features exist.
+ * Maximum number of features to return in the response. Omitted or empty values default to 10000 features, the server maximum. When set, the response includes a ``rel:next`` link if more features exist.
  */
 export type OGCLimitParamParameter = number;

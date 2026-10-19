@@ -4,5 +4,7 @@
 
 /**
  * The email address.
+ * @minLength 1
+ * @maxLength 320
  */
 export type AuthEmail = string;

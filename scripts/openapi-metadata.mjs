@@ -1,3 +1,5 @@
+import { sdkDocument } from "./openapi-scope.mjs";
+
 /** Pure generation-time metadata projection; never maintains its own route list. */
 export function operationOverrides(document) {
   const resolve = (value) => {
@@ -17,7 +19,7 @@ export function operationOverrides(document) {
     return resolve(resolved);
   };
   const overrides = {};
-  for (const pathItem of Object.values(document.paths ?? {})) {
+  for (const pathItem of Object.values(sdkDocument(document).paths)) {
     for (const [method, operation] of Object.entries(resolve(pathItem))) {
       if (
         ![
@@ -120,13 +122,15 @@ export function formMutators(document) {
       ...(schema.anyOf ?? []),
     ]) {
       for (const [name, field] of Object.entries(properties(part, visited))) {
-        if (
-          name in result &&
-          !!result[name]["x-drf-null-as-empty"] !==
-            !!field["x-drf-null-as-empty"]
-        )
-          throw new Error(`Conflicting form null policy for ${name}.`);
-        result[name] = field;
+        // A valid union member can permit null while another requires a file.
+        // The DTO selects the valid member; every permitted null uses the same
+        // empty form value. Retain that transport policy across all members.
+        result[name] = {
+          ...field,
+          ...(result[name]?.["x-drf-null-as-empty"] === true
+            ? { "x-drf-null-as-empty": true }
+            : {}),
+        };
       }
     }
     for (const [name, field] of Object.entries(schema.properties ?? {}))
@@ -137,7 +141,7 @@ export function formMutators(document) {
     "/** Generated from OpenAPI.yaml by scripts/generate.mjs. Do not edit. */",
     'import { unionFormData, unionUrlEncoded } from "./runtime/form-data";',
   ];
-  for (const pathItem of Object.values(document.paths ?? {})) {
+  for (const pathItem of Object.values(sdkDocument(document).paths)) {
     for (const [method, operation] of Object.entries(resolve(pathItem))) {
       if (
         ![

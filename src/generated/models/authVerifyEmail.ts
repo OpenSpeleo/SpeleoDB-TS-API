@@ -3,6 +3,9 @@
  */
 
 export interface AuthVerifyEmail {
-  /** The email verification key */
+  /**
+   * The email verification key
+   * @minLength 1
+   */
   key: string;
 }

@@ -15,10 +15,10 @@ export interface SubSurfaceStationRequest {
   name: string;
   /** Optional description of the station */
   description?: string;
-  /** Numeric coordinate; rounded to seven decimal places before validation. */
-  latitude: number | string;
-  /** Numeric coordinate; rounded to seven decimal places before validation. */
-  longitude: number | string;
+  /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-90, 90]. */
+  latitude: number | boolean | string;
+  /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-180, 180]. */
+  longitude: number | boolean | string;
   /**
    * Type of SubSurfaceStation
    *

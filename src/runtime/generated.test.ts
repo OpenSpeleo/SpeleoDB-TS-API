@@ -75,6 +75,7 @@ describe("generated operation integration", () => {
           : v2UserAuthTokenCreateWithUrlEncoded;
       await invoke(
         { email: "person@example.test", password: "secret" },
+        undefined,
         { client, headers },
       );
       expect(transport).toHaveBeenCalledOnce();
@@ -107,10 +108,12 @@ describe("generated operation integration", () => {
     });
     await v2GisGeometriesCreateWithFormData(
       { name: "Café 🦇", geojson: JSON.stringify(geometry) },
+      undefined,
       { client },
     );
     await v2GisGeometriesCreateWithUrlEncoded(
       { name: "Café 🦇", geojson: JSON.stringify(geometry) },
+      undefined,
       { client },
     );
     for (const body of bodies) {
@@ -133,15 +136,24 @@ describe("generated operation integration", () => {
       },
     });
     const update = { distance_from_entry: null, uninstall_date: null };
-    await v2CylinderInstallsPartialUpdateWithFormData("install", update, {
-      client,
-    });
-    await v2CylinderInstallsPartialUpdateWithUrlEncoded("install", update, {
-      client,
-    });
-    await v2CylinderInstallsPartialUpdateWithJson("install", update, {
-      client,
-    });
+    await v2CylinderInstallsPartialUpdateWithFormData(
+      "install",
+      update,
+      undefined,
+      { client },
+    );
+    await v2CylinderInstallsPartialUpdateWithUrlEncoded(
+      "install",
+      update,
+      undefined,
+      { client },
+    );
+    await v2CylinderInstallsPartialUpdateWithJson(
+      "install",
+      update,
+      undefined,
+      { client },
+    );
     expect([...(bodies[0] as FormData).entries()]).toEqual([
       ["distance_from_entry", ""],
       ["uninstall_date", ""],
@@ -177,6 +189,7 @@ describe("generated operation integration", () => {
     await v2ProjectsPartialUpdateWithUrlEncoded(
       "project",
       { latitude: 0, longitude: "-71.25" },
+      undefined,
       { client },
     );
     expect(transport).toHaveBeenCalledOnce();
@@ -185,6 +198,9 @@ describe("generated operation integration", () => {
   it("uses generated JSON serialization and status metadata through the public package", async () => {
     const transport = vi.fn(async (request: ApiTransportRequest) => {
       expect(request.method).toBe("POST");
+      expect(request.url).toBe(
+        "https://example.test/api/v2/user/auth-token/?format=json",
+      );
       expect(request.headers.get("content-type")).toBe("application/json");
       expect(request.body).toBe(
         '{"email":"café@example.test","password":"secret"}',
@@ -202,6 +218,7 @@ describe("generated operation integration", () => {
     });
     const result = await v2UserAuthTokenCreateWithJson(
       { email: "café@example.test", password: "secret" },
+      { format: "json" },
       { client },
     );
     expect(result).toMatchObject({ kind: "documented", status: 400 });
@@ -239,6 +256,7 @@ describe("generated operation integration", () => {
         }),
         collection: "collection-id",
       },
+      undefined,
       { client },
     );
     expect(transport).toHaveBeenCalledOnce();
@@ -264,6 +282,7 @@ describe("generated operation integration", () => {
         artifact: [new File(["1"], "first.dat"), new File(["2"], "second.dat")],
         message: "Update survey",
       },
+      undefined,
       { client },
     );
     expect(result).toMatchObject({
@@ -296,6 +315,7 @@ describe("generated operation integration", () => {
     await v2StationsPartialUpdateWithFormData(
       "station",
       { name: "Station α", latitude: 12.5, longitude: -71.25 },
+      undefined,
       { client },
     );
     expect(transport).toHaveBeenCalledOnce();
@@ -320,6 +340,7 @@ describe("generated operation integration", () => {
       "id /é",
       "zip",
       "hash?#",
+      undefined,
       { client },
     );
     expect(fetcher.mock.calls[0]?.[0]).toBe(

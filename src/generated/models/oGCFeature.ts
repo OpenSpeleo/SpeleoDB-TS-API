@@ -8,8 +8,8 @@ import type { OGCLink } from "./oGCLink";
 
 export interface OGCFeature {
   type: OGCFeatureType;
-  id?: string | number;
-  geometry: OGCGeometry | null;
+  id: string | number;
+  geometry: OGCGeometry;
   /** @nullable */
   properties?: OGCFeatureProperties;
   links?: OGCLink[];

@@ -4,5 +4,5 @@
 import type { OGCExtentSpatial } from "./oGCExtentSpatial";
 
 export interface OGCExtent {
-  spatial?: OGCExtentSpatial;
+  spatial: OGCExtentSpatial;
 }

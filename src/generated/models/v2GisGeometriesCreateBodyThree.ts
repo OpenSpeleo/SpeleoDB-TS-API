@@ -36,6 +36,9 @@ export type V2GisGeometriesCreateBodyThree = {
   color?: string;
   /** Optional description of the geometry. */
   description?: string;
-  /** JSON-encoded value. */
+  /**
+   * WGS84 2D coordinates. Polygon has one closed simple outer ring and no holes. Server additionally validates coordinate bounds, topology, and bounding-box area.
+   * JSON-encoded value.
+   */
   geojson: string;
 };

@@ -4,7 +4,10 @@
 import type { AuthPassword } from "./authPassword";
 
 export interface AuthResetPassword {
-  /** The password reset key */
+  /**
+   * The password reset key
+   * @minLength 1
+   */
   key: string;
   password: AuthPassword;
 }

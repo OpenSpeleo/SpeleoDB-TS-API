@@ -7,6 +7,7 @@ import type { ExperimentRequestExperimentFields } from "./experimentRequestExper
  * Serializer for Experiment model with field processing.
  */
 export interface ExperimentRequest {
+  /** List definitions infer order from position; dictionary definitions require order and UUID or temp_ keys. Names are sanitized and must remain nonempty and unique. Existing type, required and options are immutable. PUT with existing IDs must include every existing field. An empty list preserves fields on update and creates only mandatory fields on creation. Null is rejected. */
   experiment_fields?: ExperimentRequestExperimentFields;
   /**
    * Short project code, e.g. AQ-2025-GL

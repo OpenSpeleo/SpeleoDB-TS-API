@@ -133,6 +133,18 @@ export async function apiRequest<
         controller.signal.throwIfAborted();
         const headers = mergedHeaders(configuredHeaders, options.headers);
         if (options.body instanceof FormData) headers.delete("content-type");
+        // OpenAPI request media ranges select a callable variant, but HTTP
+        // Content-Type must be concrete. Explicit concrete caller headers win.
+        if (headers.get("content-type")?.split(";")[0]?.includes("*")) {
+          const bodyType =
+            options.body instanceof Blob ? options.body.type : "";
+          headers.set(
+            "content-type",
+            bodyType && !bodyType.includes("*")
+              ? bodyType
+              : "application/octet-stream",
+          );
+        }
         const target = new URL(url, client.baseUrl);
         if (
           target.origin !== new URL(client.baseUrl).origin ||

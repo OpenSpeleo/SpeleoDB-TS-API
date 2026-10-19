@@ -3,7 +3,9 @@
 The generated TypeScript SDK for SpeleoDB's current APIs. OpenAPI owns endpoint
 paths, methods, parameters, request bodies and response models. A small runtime
 provides browser networking and an injectable transport for Capacitor and other
-hosts. Legacy v1 operations are outside this package.
+hosts. Obsolete SpeleoDB `/api/v1` operations are excluded by an exact
+path-prefix filter even when present in the input export. Authentication's own
+`/v1` paths remain supported.
 
 This package distributes TypeScript source. Bun and application bundlers import
 `@speleodb/api` directly; there is no prerequisite build and no runtime
@@ -125,18 +127,19 @@ bun run check
 
 Orval is pinned to 8.43.0. The configuration derives response metadata from the
 same verified backend export; there is no separately maintained route registry.
-Never edit generated files. `generate:check` regenerates into a temporary
-directory and compares bytes and filenames without modifying source. For an
-unpublished backend change, explicitly set `SPELEODB_OPENAPI_PATH` to an
-absolute path to the reviewed export and update the source record's hash. The
-local input is still hash-verified. A null revision marks local development and
-blocks default remote generation and release until a real backend commit is
-published. Application installs, builds and runtime calls do not fetch the
-schema.
+Never edit `src/generated/` or `src/form-data.generated.ts` manually: correct
+the source exporter or generation inputs and regenerate. `generate:check`
+regenerates into a temporary directory and compares bytes and filenames without
+modifying source. For an unpublished backend change, explicitly set
+`SPELEODB_OPENAPI_PATH` to an absolute path to the reviewed export and update
+the source record's hash. The local input is still hash-verified. A null
+revision marks local development and blocks default remote generation and
+release until a real backend commit is published. Application installs, builds
+and runtime calls do not fetch the schema.
 
 `bun run test` uses Vitest with Istanbul runtime coverage. A schema-derived
-loopback HTTP matrix exercises all 322 canonical operations, 525 generated
-request variants and 1,148 declared status/media combinations. It verifies
+loopback HTTP matrix exercises all 376 supported operations, 584 generated
+request variants and 1,868 declared status/media combinations. It verifies
 request bytes, complete response metadata, decoding and unexpected responses.
 Focused tests cover cancellation, streaming, redirects, credentials, forms, XHR
 adapter events and generation safety. CI verifies generation, strict types,

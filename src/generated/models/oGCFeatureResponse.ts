@@ -3,7 +3,6 @@
  */
 import type { OGCFeature } from "./oGCFeature";
 
-/**
- * OGC API - Features single Feature.
- */
-export type OGCFeatureResponse = OGCFeature;
+export type OGCFeatureResponse = OGCFeature & {
+  [key: string]: unknown;
+} & Required<Pick<OGCFeature & { [key: string]: unknown }, "links">>;

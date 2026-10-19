@@ -12,8 +12,6 @@ export type V2SensorFleetsCreateBodyOne = {
    * @maxLength 50
    */
   name: string;
-  /** @minLength 1 */
-  created_by?: string;
   sensors?: SensorRequest[];
   /** Optional description of the station */
   description?: string;
