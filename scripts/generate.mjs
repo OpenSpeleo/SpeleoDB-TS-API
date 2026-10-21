@@ -18,7 +18,7 @@ import { sdkDocument } from "./openapi-scope.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const check = process.argv.includes("--check");
-// Validate provenance before creating outputs or loading the code generator.
+// Validate the package snapshot before creating outputs or loading the generator.
 const bytes = await loadOpenApiSchema(root);
 const temporary = await mkdtemp(
   path.join(tmpdir(), "speleodb-api-generation-"),
@@ -35,8 +35,8 @@ try {
     });
   }
   const schema = sdkDocument(Bun.YAML.parse(bytes.toString("utf8")));
-  // JSON is valid YAML. This disposable SDK projection leaves the producer's
-  // verified bytes and provenance untouched, including excluded legacy routes.
+  // JSON is valid YAML. This disposable SDK projection leaves the package's
+  // reviewed snapshot and digest untouched, including excluded legacy routes.
   await writeFile(path.join(temporary, "OpenAPI.yaml"), JSON.stringify(schema));
   const { format } = await import("prettier");
   const { formMutators } = await import("./openapi-metadata.mjs");

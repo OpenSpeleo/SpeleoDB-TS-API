@@ -31,7 +31,7 @@ in `src/generated/` or `src/form-data.generated.ts`.** They are generated
 artifacts, including operation functions, DTOs, response metadata, and form
 wrappers.
 
-Fix backend schema generation when its contract is inaccurate. Fix
+Fix the local schema snapshot when its contract is inaccurate. Fix
 `orval.config.mjs`, `scripts/`, or the handwritten `src/runtime/` when
 generation or transport adaptation is inaccurate. Then run `bun run generate` to
 replace generated artifacts. Add a regression for the cause. Do not repair a
@@ -42,25 +42,28 @@ compares both filenames and bytes. CI and the `generated-sdk-sync` prek hook
 enforce this rule. A failing drift check requires regeneration from the correct
 source; it does not authorize editing generated files.
 
-## Canonical schema and provenance
+## Local schema snapshot
 
-The web backend owns the only checked-in `OpenAPI.yaml`. Do not add a schema
-copy to this repository or its npm archive. `openapi-source.json` records the
-actual immutable backend commit and the SHA-256 of its complete canonical bytes.
-Never invent a revision, use a branch as a revision, or hash the filtered SDK
-projection instead of the canonical file.
+This repository owns `OpenAPI.yaml`, the checked-in schema snapshot used by all
+SDK generation and verification. `openapi-source.json` contains only the SHA-256
+of its complete bytes. Include both files in the npm archive.
 
-`scripts/openapi-source.mjs` verifies the complete canonical bytes before any
-scope filtering or generation. Published generation downloads the pinned
-`OpenSpeleo/SpeleoDB` revision. Unpublished local work requires an explicitly
-supplied absolute `SPELEODB_OPENAPI_PATH` and a matching digest. A null revision
-is allowed for local work only; release requires the real published revision.
-Never discover a schema through relative sibling/ancestor paths.
+`scripts/openapi-source.mjs` loads only this package-local snapshot and verifies
+its digest before scope filtering or generation. Never add remote schema
+fetches, backend revision gates, environment overrides, sibling/ancestor
+discovery, or cross-repository schema equality checks to this package's
+standalone workflow. A standalone SDK checkout must be able to generate and
+release independently of another repository's publication. The monorepo owns a
+separate local integration unit test comparing its web and SDK snapshots with
+the recorded digest; preserve that check without importing it into either
+child's standalone CI.
 
-The filtered input exists only in the generation process's disposable directory.
-It does not replace the canonical backend file or change the meaning of its
-provenance hash. Keep schema bytes, temporary fixtures, review notes, and task
-tracking outside the checkout.
+Adopt a contract update by manually importing a reviewed OpenAPI export into
+`OpenAPI.yaml`, updating its digest, and regenerating. Review the schema and
+generated diffs together. Preserve the imported bytes; the digest describes the
+complete snapshot, not the filtered SDK projection. The filtered generation
+input exists only in a disposable directory. Keep temporary fixtures, review
+notes, and task tracking outside the checkout.
 
 ## Standalone development and verification
 
@@ -77,7 +80,8 @@ build, then run `prek run --all-files`. Never install hooks. Preserve runtime
 coverage thresholds and exhaustive operation/status/media coverage. HTTP
 serialization witnesses do not replace real backend contract tests.
 
-Release only through the existing trusted-publishing CI with a reviewed,
-published backend revision. Git mutations, tags, pushes and publication require
-the user's explicit authorization; a review or implementation request alone is
-not authorization. Preserve existing staged/unstaged work and temporary files.
+Release only through the existing trusted-publishing CI with the reviewed local
+schema snapshot and matching generated output. Git mutations, tags, pushes and
+publication require the user's explicit authorization; a review or
+implementation request alone is not authorization. Preserve existing
+staged/unstaged work and temporary files.

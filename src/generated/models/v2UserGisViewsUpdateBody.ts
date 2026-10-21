@@ -17,5 +17,7 @@ export type V2UserGisViewsUpdateBody = {
   description?: string;
   /** If True, allows users to zoom to the precise location of the cave */
   allow_precise_zoom: boolean;
+  /** @nullable */
+  geographic_bound?: string | null;
   projects: GISProjectViewInputRequest[];
 };

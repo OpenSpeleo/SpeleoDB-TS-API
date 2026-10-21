@@ -29,10 +29,7 @@ afterEach(async () => {
   );
 });
 
-async function fixture(
-  bytes: Buffer = original,
-  revision: string | null = null,
-) {
+async function fixture(bytes: Buffer = original) {
   const directory = await mkdtemp(
     path.join(tmpdir(), "speleodb-schema-source-test-"),
   );
@@ -52,11 +49,10 @@ async function fixture(
   await writeFile(
     path.join(directory, "openapi-source.json"),
     JSON.stringify({
-      revision,
       sha256: createHash("sha256").update(bytes).digest("hex"),
     }),
   );
-  await writeFile(path.join(directory, "producer-export"), bytes);
+  await writeFile(path.join(directory, "OpenAPI.yaml"), bytes);
   await writeFile(
     path.join(directory, "src/generated/preserved.ts"),
     "existing generated operation\n",
@@ -73,10 +69,7 @@ async function fixture(
   return directory;
 }
 
-function run(directory: string, args: string[], localPath?: string) {
-  const env = { ...process.env };
-  delete env.SPELEODB_OPENAPI_PATH;
-  if (localPath !== undefined) env.SPELEODB_OPENAPI_PATH = localPath;
+function run(directory: string, args: string[], env = process.env) {
   return spawnSync(process.execPath, args, {
     cwd: directory,
     env,
@@ -94,14 +87,23 @@ async function expectOutputsUnchanged(directory: string) {
   ).toBe("existing form policy\n");
 }
 
-describe("single backend schema provenance", () => {
-  it("reads an explicitly supplied export byte-for-byte during unpublished local maintenance", async () => {
+describe("package-local schema snapshot", () => {
+  it("reads the checked-in snapshot byte-for-byte without a backend revision", async () => {
     const directory = await fixture();
-    const result = run(
-      directory,
-      ["read-source.mjs"],
-      path.join(directory, "producer-export"),
-    );
+    const result = run(directory, ["read-source.mjs"]);
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(Buffer.from(result.stdout)).toEqual(original);
+  });
+
+  it("does not redirect generation through a legacy external schema override", async () => {
+    const directory = await fixture();
+    const external = path.join(directory, "unrelated-schema.yaml");
+    await writeFile(external, "unrelated schema");
+    const result = run(directory, ["read-source.mjs"], {
+      ...process.env,
+      SPELEODB_OPENAPI_PATH: external,
+    });
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(0);
     expect(Buffer.from(result.stdout)).toEqual(original);
@@ -111,59 +113,40 @@ describe("single backend schema provenance", () => {
     "rejects changed bytes before writing any generated output in %s mode",
     async (mode) => {
       const directory = await fixture();
-      const input = path.join(directory, "producer-export");
-      await writeFile(input, Buffer.concat([original, Buffer.from(" ")]));
+      await writeFile(
+        path.join(directory, "OpenAPI.yaml"),
+        Buffer.concat([original, Buffer.from(" ")]),
+      );
       const args = mode === "check" ? ["--check"] : [];
-      const result = run(directory, ["scripts/generate.mjs", ...args], input);
+      const result = run(directory, ["scripts/generate.mjs", ...args]);
       expect(result.error).toBeUndefined();
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("Backend OpenAPI SHA-256 mismatch");
+      expect(result.stderr).toContain("Package OpenAPI SHA-256 mismatch");
       await expectOutputsUnchanged(directory);
     },
   );
 
-  it("rejects an empty input even when its digest matches", async () => {
+  it("rejects an empty snapshot even when its digest matches", async () => {
     const directory = await fixture(Buffer.alloc(0));
-    const result = run(
-      directory,
-      ["scripts/generate.mjs"],
-      path.join(directory, "producer-export"),
-    );
+    const result = run(directory, ["scripts/generate.mjs"]);
     expect(result.error).toBeUndefined();
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain("backend OpenAPI schema is empty");
+    expect(result.stderr).toContain("package OpenAPI schema is empty");
     await expectOutputsUnchanged(directory);
   });
 
-  it("rejects a relative maintenance path", async () => {
+  it("fails on a missing local snapshot without using an external override", async () => {
     const directory = await fixture();
-    const result = run(directory, ["scripts/generate.mjs"], "producer-export");
+    const external = path.join(directory, "unrelated-schema.yaml");
+    await writeFile(external, original);
+    await rm(path.join(directory, "OpenAPI.yaml"));
+    const result = run(directory, ["scripts/generate.mjs", "--check"], {
+      ...process.env,
+      SPELEODB_OPENAPI_PATH: external,
+    });
     expect(result.error).toBeUndefined();
     expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain("explicit absolute path");
-    await expectOutputsUnchanged(directory);
-  });
-
-  it("rejects an unpublished remote revision instead of discovering another local schema", async () => {
-    const directory = await fixture();
-    await writeFile(path.join(directory, "OpenAPI.yaml"), original);
-    const result = run(directory, ["scripts/generate.mjs", "--check"]);
-    expect(result.error).toBeUndefined();
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain("backend schema revision is unpublished");
-    await expectOutputsUnchanged(directory);
-  });
-
-  it("rejects a mutable backend reference even with a valid local export", async () => {
-    const directory = await fixture(original, "master");
-    const result = run(
-      directory,
-      ["scripts/generate.mjs"],
-      path.join(directory, "producer-export"),
-    );
-    expect(result.error).toBeUndefined();
-    expect(result.status).not.toBe(0);
-    expect(result.stderr).toContain("full backend commit revision");
+    expect(result.stderr).toContain("ENOENT");
     await expectOutputsUnchanged(directory);
   });
 });
@@ -202,7 +185,6 @@ function generateFixture(directory: string, temporary: string, check = true) {
       env: {
         ...process.env,
         TMPDIR: temporary,
-        SPELEODB_OPENAPI_PATH: path.join(directory, "producer-export"),
       },
       encoding: "utf8",
       timeout: 110_000,

@@ -107,17 +107,11 @@ credentials.
 
 ## Contract and regeneration
 
-The web backend owns the sole checked-in `OpenAPI.yaml`. Its exporter combines
-current DRF, supported allauth and OGC operations; backend contract tests
-establish correctness. A generated SDK is not evidence that the server contract
-has been audited.
-
-This package stores only `openapi-source.json`: the backend's immutable commit
-revision and the SHA-256 of its canonical export. Generation downloads that
-revision from `OpenSpeleo/SpeleoDB`, verifies the exact bytes, and stages the
-schema in an OS temporary directory that is removed afterward. There is no
-schema copy in this repository or the npm package. Web CI and the monorepo root
-check compare the canonical export's hash with the SDK's source record.
+This repository owns the checked-in `OpenAPI.yaml` snapshot used to generate the
+SDK. `openapi-source.json` records its SHA-256. Generation reads and verifies
+these package-local files; it does not fetch a schema or require another
+repository, backend commit, or environment override. Both files are included in
+the npm package.
 
 ```sh
 test -s bun.lock && bun install --frozen-lockfile
@@ -125,21 +119,24 @@ bun run generate
 bun run check
 ```
 
-Orval is pinned to 8.43.0. The configuration derives response metadata from the
-same verified backend export; there is no separately maintained route registry.
+Orval is pinned to 8.43.0. Response metadata comes from the same verified local
+snapshot; there is no separately maintained route registry. To adopt an API
+change, manually import the reviewed OpenAPI export into `OpenAPI.yaml`, update
+its digest, and regenerate. Schema imports are deliberate SDK changes, separate
+from backend and consumer releases. Backend contract tests establish server
+correctness; a generated SDK alone is not evidence of that audit.
+
 Never edit `src/generated/` or `src/form-data.generated.ts` manually: correct
-the source exporter or generation inputs and regenerate. `generate:check`
-regenerates into a temporary directory and compares bytes and filenames without
-modifying source. For an unpublished backend change, explicitly set
-`SPELEODB_OPENAPI_PATH` to an absolute path to the reviewed export and update
-the source record's hash. The local input is still hash-verified. A null
-revision marks local development and blocks default remote generation and
-release until a real backend commit is published. Application installs, builds
-and runtime calls do not fetch the schema.
+the schema or generation inputs and regenerate. `generate:check` reproduces
+output in a temporary directory and compares bytes and filenames without
+modifying source. A clean standalone checkout contains everything required for
+schema verification and generation once its dependencies are installed. The
+monorepo separately checks that its local web and SDK snapshots and the recorded
+digest agree; this integration check does not couple standalone CI or releases.
 
 `bun run test` uses Vitest with Istanbul runtime coverage. A schema-derived
 loopback HTTP matrix exercises all 376 supported operations, 584 generated
-request variants and 1,868 declared status/media combinations. It verifies
+request variants and 1,869 declared status/media combinations. It verifies
 request bytes, complete response metadata, decoding and unexpected responses.
 Focused tests cover cancellation, streaming, redirects, credentials, forms, XHR
 adapter events and generation safety. CI verifies generation, strict types,

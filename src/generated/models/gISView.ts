@@ -17,6 +17,11 @@ export interface GISView {
   description: string;
   /** If True, allows users to zoom to the precise location of the cave */
   allow_precise_zoom: boolean;
+  /**
+   * Optional Polygon restricting the public web viewer display only. Raw GeoJSON downloads and OGC access remain unrestricted.
+   * @nullable
+   */
+  geographic_bound: string | null;
   /** Unique token for API access to this view */
   readonly gis_token: string;
   readonly owner_email: string;

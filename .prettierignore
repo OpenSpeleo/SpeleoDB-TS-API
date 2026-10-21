@@ -3,3 +3,6 @@ dist/
 coverage/
 .speleodb-unreleased/
 bun.lock
+
+# Preserve the reviewed schema snapshot bytes and digest.
+OpenAPI.yaml

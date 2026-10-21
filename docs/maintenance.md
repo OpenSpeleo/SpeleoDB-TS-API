@@ -1,9 +1,9 @@
 # Maintaining @speleodb/api
 
 This package makes the web application's executable API contract available to
-TypeScript consumers. The backend owns that contract; Orval owns generated code;
-the SDK runtime owns transport adaptation. Changes should preserve these
-boundaries so an endpoint correction benefits every consumer.
+TypeScript consumers. The SDK owns its checked-in schema snapshot; Orval owns
+generated code; the SDK runtime owns transport adaptation. Changes should
+preserve these boundaries so an endpoint correction benefits every consumer.
 
 ## Prerequisites and ownership
 
@@ -20,9 +20,10 @@ formatter.
 
 | File or directory              | Owner and purpose                                                       |
 | ------------------------------ | ----------------------------------------------------------------------- |
-| `openapi-source.json`          | Immutable backend revision and exact export SHA-256; no schema copy     |
+| `OpenAPI.yaml`                 | Reviewed local OpenAPI snapshot used for SDK generation                 |
+| `openapi-source.json`          | SHA-256 of the complete local snapshot                                  |
 | `orval.config.mjs`             | Pinned generator configuration and output layout                        |
-| `scripts/openapi-source.mjs`   | Loads and verifies the sole backend schema for temporary generation     |
+| `scripts/openapi-source.mjs`   | Loads and verifies the package-local schema snapshot                    |
 | `scripts/openapi-scope.mjs`    | Excludes only the obsolete SpeleoDB `/api/v1` mount from SDK generation |
 | `scripts/openapi-metadata.mjs` | Derives response decoding and form field policies from the snapshot     |
 | `src/generated/`               | Orval output; regenerate instead of editing                             |
@@ -39,18 +40,29 @@ Capacitor or a frontend framework.
 The public package exports TypeScript source. A consumer does not run a package
 build first. `dist/` is disposable bundle/type smoke-test output, ignored by Git
 and excluded from publication. `./package.json` and `./openapi-source.json` are
-explicit exports for tooling and provenance. Neither this repository nor the npm
-archive contains a second OpenAPI schema. Application installs, builds and
-runtime calls use generated TypeScript and do not download the schema.
+explicit exports for tooling. The npm archive also includes `OpenAPI.yaml`.
+Application installs, builds and runtime calls use generated TypeScript.
+Generation, CI and release use the checked-in snapshot without fetching another
+repository or requiring a backend revision.
 
-## Producing the canonical schema
+## Updating the local schema snapshot
 
-Change endpoint behavior, serializer annotations and contract tests in the web
-repository first. Its
-[API contract documentation](https://github.com/OpenSpeleo/SpeleoDB/blob/366c402ee9a60bd9df7fe6149427073f20d9f356/docs/api-contract.md)
-describes route inventory, allauth and OGC composition, error/media auditing and
-backend verification. SpeleoDB's obsolete `/api/v1` mount is intentionally
-excluded from this SDK; authentication's own `/v1` routes remain supported.
+`OpenAPI.yaml` is the SDK's complete generation input. Import a reviewed API
+export manually when adopting a contract change, preserve its exact bytes, and
+update `openapi-source.json` alongside it. This explicit import is the only
+schema synchronization step. SDK generation and standalone CI never inspect
+another checkout, fetch a backend file, or enforce equality with another
+repository. The monorepo retains a local integration unit test comparing its web
+snapshot, SDK snapshot and recorded digest. This integration gate belongs to the
+monorepo; it does not introduce a dependency between standalone child CI jobs or
+releases.
+
+The imported export should describe actual endpoint behavior, including
+supported authentication and OGC operations. Backend verification remains the
+producer's responsibility; structural validation or successful SDK generation
+does not prove endpoint correctness. SpeleoDB's obsolete `/api/v1` mount is
+intentionally excluded from this SDK; authentication's own `/v1` routes remain
+supported.
 
 ### Exact SDK scope and generated-source ownership
 
@@ -62,11 +74,11 @@ and `/api/auth/app/v1/...`. It also does not confuse `/api/v10/...` with the
 obsolete mount. Never use a substring search for `v1` or remove all APIs whose
 URLs contain that version segment.
 
-`scripts/generate.mjs` first loads and hash-verifies the complete canonical
-export. Only afterward does `scripts/openapi-scope.mjs` create the document
+`scripts/generate.mjs` first loads and hash-verifies the complete local
+snapshot. Only afterward does `scripts/openapi-scope.mjs` create the document
 passed to Orval. This filtered document is serialized as JSON, which is valid
-YAML, inside the existing disposable generation directory. The backend's
-canonical bytes are preserved. The SHA-256 in `openapi-source.json` always
+YAML, inside the existing disposable generation directory. The checked-in
+snapshot bytes are preserved. The SHA-256 in `openapi-source.json` always
 describes the full original export, including any excluded paths; it never
 describes this temporary projection. No filtered schema is checked in or
 published.
@@ -81,144 +93,40 @@ filter does not remove or alter any backend route.
 All files under `src/generated/` and `src/form-data.generated.ts` must be
 created through `bun run generate`. Never hand-edit an endpoint, DTO, generated
 URL, form wrapper, or generated response metadata—even to fix a small type or
-formatting error. Correct the backend exporter or the handwritten generation
-inputs, regenerate, then review the result. CI and prek's `generated-sdk-sync`
-hook run `generate:check`, which compares exact filenames and bytes. A manual
-change must fail that check; do not disable the check or preserve the manual
-change by copying it into a temporary generation fixture.
+formatting error. Correct the local schema snapshot or the handwritten
+generation inputs, regenerate, then review the result. CI and prek's
+`generated-sdk-sync` hook run `generate:check`, which compares exact filenames
+and bytes. A manual change must fail that check; do not disable the check or
+preserve the manual change by copying it into a temporary generation fixture.
 
-In a standalone web checkout, use its configured environment and dependencies:
+### Importing a reviewed export
 
-```sh
-uv run --frozen python manage.py export_api_schema
-uv run --frozen python manage.py export_api_schema --check
-```
-
-Use the web application's PostgreSQL configuration for canonical exports.
-Database-specific integer bounds can differ under SQLite; when using the web
-test settings, supply its PostgreSQL `TEST_DATABASE_URL` as documented there.
-The exporter does not require a live database connection.
-
-The exporter is the composed backend generator, rather than a separate
-hand-built SDK schema. Do not call public production services to infer
-undocumented behavior or copy a browser documentation page as the contract.
-Export twice and compare when changing the exporter; timestamps,
-environment-specific hosts, identifiers or iteration order must not create
-unrelated diffs.
-
-With the existing monorepo development container, run from the monorepo root:
+From this SDK checkout, copy the reviewed export to `OpenAPI.yaml`. The source
+may be an explicitly supplied file; no source repository location is configured
+or discovered by the SDK. Preserve the export bytes rather than independently
+serializing or formatting them. After reviewing the schema diff, record its
+SHA-256:
 
 ```sh
-docker exec -w /app speleodb-monorepo-django python manage.py export_api_schema
-docker exec -w /app speleodb-monorepo-django python manage.py export_api_schema \
-  --check
-```
-
-This uses an existing configured container. Schema updates do not require
-recreating containers, deleting volumes, or initializing Git submodules. Keep
-backend revision and verification evidence in the change description; an export
-that validates structurally is not proof of endpoint correctness.
-
-`export_api_schema --output /tmp/OpenAPI.yaml` creates an export without
-replacing the web repository snapshot. Preserve those canonical bytes: do not
-independently serialize JSON as YAML, sort keys, normalize quoting or run a
-formatter over the export.
-
-### Pinning the producer source
-
-`openapi-source.json` records only `revision` and `sha256`. The producer is
-fixed to `OpenSpeleo/SpeleoDB` and its root `OpenAPI.yaml`; arbitrary hosts,
-branches and relative sibling paths are not configuration options. Record the
-full 40-character lowercase backend commit and the 64-character lowercase
-SHA-256 of the reviewed file. Obtain the hash with
-`sha256sum /absolute/path/OpenAPI.yaml` or
-`shasum -a 256 /absolute/path/OpenAPI.yaml`. The immutable revision must be
-published and contain those exact bytes before default remote generation or a
-release can pass. Keep the API contract documentation link above pinned to that
-same producer revision when updating the source record.
-
-During unpublished backend work, set `revision` to `null` and update `sha256` to
-the reviewed export's actual digest. Supply that file explicitly from the SDK
-checkout:
-
-```sh
-export SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml
 bun -e '
 import { createHash } from "node:crypto";
-const bytes = await Bun.file(process.env.SPELEODB_OPENAPI_PATH).arrayBuffer();
+const bytes = await Bun.file("OpenAPI.yaml").arrayBuffer();
 await Bun.write("openapi-source.json", JSON.stringify({
-  revision: null,
   sha256: createHash("sha256").update(new Uint8Array(bytes)).digest("hex"),
 }, null, 2) + "\n");
 '
+bun run generate
 ```
 
-Review that source-record change alongside the backend export, then regenerate
-and verify using that same explicit input:
+`openapi-source.json` contains only `sha256`, the 64-character lowercase digest
+of the complete local snapshot. There is no backend revision, remote URL, or
+schema-path override. A missing snapshot or digest mismatch fails generation;
+the loader never downloads a substitute or silently updates the digest.
 
-```sh
-SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run generate
-SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml bun run check
-SPELEODB_OPENAPI_PATH=/absolute/path/to/web/OpenAPI.yaml prek run -a
-```
-
-Use the same explicit input when running the SDK's checks in an isolated
-standalone source copy during that unpublished stage. No ancestor lookup or
-automatic monorepo dependency is involved. The loader rejects relative paths,
-empty inputs and changed bytes even when a local input is explicit. A null
-revision is an honest development state, not a release-ready pin. Never invent a
-commit or record a moving branch to bypass the first backend publication.
-
-After the reviewed backend commit is published, replace `null` with its actual
-revision, unset `SPELEODB_OPENAPI_PATH`, and run the ordinary standalone
-commands below. The loader fetches
-`https://raw.githubusercontent.com/OpenSpeleo/SpeleoDB/<revision>/OpenAPI.yaml`
-with a 30-second deadline, rejects HTTP failures and redirects, and verifies the
-SHA-256 before running Orval. A mismatch never rewrites the source record or
-generated output. The downloaded file exists only inside the generation
-process's OS temporary directory, which is cleaned on success or failure.
-
-To record the published revision without changing the reviewed canonical hash:
-
-```sh
-export SPELEODB_BACKEND_REVISION=the_actual_40_character_lowercase_commit
-bun -e '
-const revision = process.env.SPELEODB_BACKEND_REVISION;
-if (!revision || !/^[a-f0-9]{40}$/.test(revision)) {
-  throw new Error("Supply the actual published backend commit revision.");
-}
-const source = await Bun.file("openapi-source.json").json();
-await Bun.write("openapi-source.json", JSON.stringify({
-  revision, sha256: source.sha256,
-}, null, 2) + "\n");
-'
-unset SPELEODB_OPENAPI_PATH
-bun run generate:check
-```
-
-Replace the placeholder with the published commit, never a branch or an invented
-SHA. The final command downloads that exact upstream revision and verifies its
-bytes before comparing output. A locally successful generation is insufficient
-if this remote verification fails. Keep the producer documentation link and
-release description aligned with the recorded revision.
-
-The web repository's prek configuration regenerates its snapshot when watched
-API sources change. The SDK's local generation check compares generated source
-against its verified backend input. The monorepo root hook compares the sole web
-file's SHA-256 with `openapi-source.json` and fails on a difference; it does not
-silently synchronize them. Run these repository-owned hooks explicitly if
-needed; never install hooks as part of an SDK update.
-
-Web CI's `api-contract` job verifies export freshness and compares its SHA-256
-with this package's source record from `OpenSpeleo/SpeleoDB-TS-API` at `master`.
-The web repository variable `API_SCHEMA_REF` can select an immutable reviewed
-SDK commit during a coordinated update. Remove that override once the SDK
-default branch contains the matching contract, so future drift remains visible.
-The SDK revision must be reachable upstream before the web comparison can pass.
-Record that revision in the review; do not disable equality or replace it with
-semantic-only comparison. The SDK CI verifies generation from its pinned,
-hash-verified remote input; web CI and the monorepo root check own
-producer-to-SDK hash equality.
+Review and commit the schema snapshot, digest and regenerated SDK together when
+Git actions are authorized. Each SDK release carries its own reproducible
+contract. Backend, SDK and consumer repositories validate their own artifacts;
+none waits for another repository to publish a matching schema revision.
 
 ## Regenerating and reviewing a contract change
 
@@ -325,12 +233,12 @@ Istanbul provider pinned to the exact Vitest version. Bun uses JavaScriptCore,
 so V8 coverage is not interchangeable. The copied package CI invokes this same
 covered test command; coverage is not an optional local-only command.
 
-`tests/contract-cases.ts` reads the sole canonical schema through the same
+`tests/contract-cases.ts` reads the checked-in local schema through the same
 hash-verifying source loader used by generation. It independently derives the
 operation, parameter, request-media and response-status/media inventory.
 `tests/generated-contract.test.ts` sends every generated callable through the
 public SDK and real fetch to an owned loopback HTTP server. Currently this means
-376 supported operations, 584 request-media callables and 1,868 declared
+376 supported operations, 584 request-media callables and 1,869 declared
 status/media cases. Each callable is checked against the entire canonical
 response metadata, not only the response selected for its request test.
 Undeclared statuses and media are tested for every operation as well.
@@ -369,14 +277,11 @@ new behavior pass. XHR event tests use an explicit adapter stub; real browser
 upload behavior is additionally covered in web's browser suite. SDK loopback
 fetch tests exercise actual redirects, disconnects and unfinished responses.
 
-Schema-source tests cover immutable URL selection, hash failures, malformed
-source records, HTTP/download failures, explicit maintenance paths, refusal to
-discover a sibling schema, generated filename drift, output preservation and
-temporary-input cleanup when generation fails. Running the SDK suite may fetch
-its pinned producer export; installing or building either application does not.
-For an unpublished local contract, supply the explicit absolute maintenance path
-to the suite just as for generation. Before release, unset it and prove the
-published immutable producer revision works in a standalone SDK checkout.
+Schema-source tests cover local snapshot loading, digest failures, malformed
+source records, missing files, generated filename drift, output preservation and
+temporary-input cleanup when generation fails. The SDK suite and generator read
+the same package-local snapshot. Neither requires network schema access, another
+checkout, a backend revision, or a schema-path environment variable.
 
 ## Testing runtime changes
 
@@ -471,6 +376,18 @@ operations or optional fields can be a minor release; behavior-preserving fixes
 can be patches. While the package is `0.x`, communicate breaking changes clearly
 and use a new minor version rather than quietly shipping them as a patch.
 
+### Migrating from 0.3.x to 0.4.0
+
+GIS View management models now expose the optional nullable `geographic_bound`
+geometry UUID. Omit it on update to preserve the selection, or send `null` to
+clear it. Public metadata exposes the selected Polygon, revision, color and
+alias through `PublicGISGeographicBound`. Geometry deletion also declares a 400
+response when a GIS View references the geometry.
+
+This setting clips only the public web display; signed GeoJSON downloads and OGC
+data remain unrestricted. Existing views default to no bound. Consumers that use
+exhaustive response-status handling must account for the new deletion response.
+
 ### Migrating from 0.2.x to 0.3.0
 
 This release corrects the generated contract to match existing backend behavior.
@@ -558,28 +475,26 @@ observers when that response policy is required.
 
 These corrections require the 0.2.0 minor release because creation inputs are
 stricter. Update the exact package pin and standalone lock in each consumer,
-then run its own types, tests and build against the published package. The web
-backend remains the sole schema owner.
+then run its own types, tests and build against the published package. The SDK
+retains its reviewed local schema snapshot.
 
 ### Release coordination
 
 The SDK version in `package.json` is independent of the backend version in
-OpenAPI's `info.version`. Never edit the backend YAML to bump the SDK version;
-the source record must continue identifying the reviewed producer bytes.
+OpenAPI's `info.version`. Do not edit the local schema solely to bump the SDK
+version; its digest continues identifying the reviewed snapshot bytes.
 
 A schema correction can break generated source types even when it merely makes
 existing server behavior honest. Review consumer compilation and runtime
 effects, and document the before/after contract. Never retain an inaccurate
 schema simply to avoid a consumer migration.
 
-Release order is: verify the backend contract and SDK, publish the reviewed
-backend source revision if it is not already available, record that real
-revision in the SDK and verify default remote generation, publish the SDK
-through its version tag and trusted publishing workflow, update standalone
-consumer pins and locks, verify both apps, and finally record reachable
-submodule revisions in the monorepo. Publishing, commits, pushes and parent
-pointer updates are separate explicitly authorized actions. Pushing an SDK `v*`
-tag triggers publication when all gates pass; ordinary branch pushes and pull
+Verify the SDK against its checked-in schema and publish through its version tag
+and trusted publishing workflow. Backend publication is not an SDK release gate.
+After the SDK release is available, update standalone consumer pins and locks
+and verify those applications. Publishing, commits, pushes and parent pointer
+updates are separate explicitly authorized actions. Pushing an SDK `v*` tag
+triggers publication when all gates pass; ordinary branch pushes and pull
 requests only validate.
 
 Before a version is published to npm, a live monorepo build does not prove a
@@ -590,11 +505,11 @@ integrity, URLs or revisions, and do not represent unpublished-consumer lock
 failures as successful release verification.
 
 Before publication inspect `bun pm pack --dry-run --ignore-scripts`. The package
-contains source, the small source record, README, maintenance documentation and
-license; it excludes node_modules, ignored dist output, coverage, credentials
-and agent working files. Verify exported paths exist inside the archive. A
-source package must be tested through an installed archive as well as a
-workspace source link.
+contains source, `OpenAPI.yaml`, its digest record, README, maintenance
+documentation and license; it excludes node_modules, ignored dist output,
+coverage, credentials and agent working files. Verify exported paths exist
+inside the archive. A source package must be tested through an installed archive
+as well as a workspace source link.
 
 For a concrete source-only archive smoke test, first run the SDK checks above,
 then use an empty directory outside all workspaces. Substitute the version in
@@ -606,7 +521,7 @@ bun pm pack --destination "$archive_dir" --ignore-scripts
 mkdir "$archive_dir/consumer"
 cd "$archive_dir/consumer"
 printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
-bun add "$archive_dir/speleodb-api-0.3.0.tgz"
+bun add "$archive_dir/speleodb-api-0.4.0.tgz"
 bun add --dev typescript@6.0.3
 cat > smoke.ts <<'TS'
 import { createApiClient, v2ProjectsList } from '@speleodb/api';
@@ -632,9 +547,9 @@ bun smoke.ts
 
 The custom transport keeps this check independent of any live user service.
 Inspect the tarball with `tar -tzf` and verify `package/src/index.ts`,
-`package/openapi-source.json`, `package/docs/maintenance.md`, README and license
-exist. Confirm that no `OpenAPI.yaml` is included. This smoke check does not
-replace installing the reviewed archive into isolated web/mobile copies and
+`package/OpenAPI.yaml`, `package/openapi-source.json`,
+`package/docs/maintenance.md`, README and license exist. This smoke check does
+not replace installing the reviewed archive into isolated web/mobile copies and
 running their own tests and builds before release.
 
 ### Trusted publishing setup and release
@@ -675,18 +590,16 @@ be configured, finish the registry's required initial setup before a release tag
 is pushed. Keep that unresolved setup explicit; do not add a token-based
 publication fallback or a placeholder package to bypass it.
 
-The source record must also have a real, published backend revision. A local
-maintenance check with `SPELEODB_OPENAPI_PATH` establishes generated-code
-correctness but does not prove that a clean standalone SDK checkout can retrieve
-its producer. Unset that override and run `bun run check` before tagging. CI
-uses the default remote path and will reject an unresolved revision, unavailable
-export or hash mismatch before the publish job can run.
+Run `bun run check` against the checked-in snapshot before tagging. CI uses the
+same package-local schema and rejects missing files, digest mismatches or
+generated drift before the publish job can run. No backend repository or
+publication order is required for these checks.
 
 After the required tests and repository-local prek checks pass, inspect the
 reviewed archive and commit the same source and documentation. When publication
 and Git actions are authorized, push the reviewed SDK commit and its
-`v<package.json version>` tag to its own upstream. For version `0.3.0`, the tag
-must be `v0.3.0`; the workflow rejects a mismatch. The publish job waits for
+`v<package.json version>` tag to its own upstream. For version `0.4.0`, the tag
+must be `v0.4.0`; the workflow rejects a mismatch. The publish job waits for
 `verify`, performs its own frozen install and build, and runs
 `npm publish --access public` from that tagged checkout. It packages the tagged
 files itself; the local archive is the reviewed candidate, not a separate
@@ -696,7 +609,7 @@ Wait for the tag workflow's successful publish job, then query the actual
 registry version:
 
 ```sh
-bun pm view @speleodb/api@0.3.0 name version dist.integrity
+bun pm view @speleodb/api@0.4.0 name version dist.integrity
 ```
 
 Use the actual release version. Inspect the published archive's file list,
@@ -728,20 +641,19 @@ when recording or publishing any resulting commits.
 
 ## Troubleshooting
 
-| Failure                                      | Resolution                                                                                                                                         |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Invalid regex or unresolved schema reference | Fix the backend export, preserve match semantics, and re-export; do not disable validation                                                         |
-| Nullable `$ref` warning                      | Preserve the required non-null shape and use the backend exporter's explicit null alternative; reference siblings alone are ignored                |
-| File bytes disappear                         | Use the multipart variant and File/Blob input; inspect generated serialization and source media declarations                                       |
-| Duplicate or missing generated names         | Correct operation IDs and collisions in the source exporter                                                                                        |
-| Regeneration changes every file              | Verify exact Bun/Orval/formatter versions and stable export ordering                                                                               |
-| Unexpected response branch                   | Inspect status/media against the backend contract; do not cast away unknown data                                                                   |
-| Native request outlives timeout              | Move asynchronous preparation inside the deadline and honor the provided signal                                                                    |
-| Standalone install reports package not found | Check whether the SDK version has been published; local workspace success does not remove the release gate                                         |
-| Root and child locks differ                  | Resolve the standalone graph in isolation, then refresh the root integration and web overlay separately                                            |
-| Backend revision is unpublished              | Use an explicit absolute local input during maintenance; publish the reviewed backend commit and record its real revision before release           |
-| Backend schema hash mismatch                 | Review the canonical export and update its source record deliberately; never normalize bytes or silently accept a new remote contract              |
-| Pinned schema download fails                 | Verify the immutable web revision is reachable and contains OpenAPI.yaml, then check network access; generation never falls back to another source |
+| Failure                                      | Resolution                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Invalid regex or unresolved schema reference | Fix the backend export, preserve match semantics, and re-export; do not disable validation                                          |
+| Nullable `$ref` warning                      | Preserve the required non-null shape and use the backend exporter's explicit null alternative; reference siblings alone are ignored |
+| File bytes disappear                         | Use the multipart variant and File/Blob input; inspect generated serialization and source media declarations                        |
+| Duplicate or missing generated names         | Correct operation IDs and collisions in the source exporter                                                                         |
+| Regeneration changes every file              | Verify exact Bun/Orval/formatter versions and stable export ordering                                                                |
+| Unexpected response branch                   | Inspect status/media against the backend contract; do not cast away unknown data                                                    |
+| Native request outlives timeout              | Move asynchronous preparation inside the deadline and honor the provided signal                                                     |
+| Standalone install reports package not found | Check whether the SDK version has been published; local workspace success does not remove the release gate                          |
+| Root and child locks differ                  | Resolve the standalone graph in isolation, then refresh the root integration and web overlay separately                             |
+| Local schema hash mismatch                   | Review `OpenAPI.yaml` and deliberately update its digest before regenerating; never silently accept changed bytes                   |
+| Local schema snapshot is missing             | Restore the reviewed `OpenAPI.yaml` through an authorized import; generation does not fetch a substitute                            |
 
 Keep durable contract explanations here or in backend/application docs.
 Temporary task notes, verification logs and investigation files belong outside

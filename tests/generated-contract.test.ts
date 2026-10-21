@@ -330,7 +330,7 @@ describe("canonical OpenAPI inventory and generated wire behavior", () => {
   it("covers every canonical operation, callable media variant and status/media declaration", () => {
     expect(operations).toHaveLength(376);
     expect(variants).toHaveLength(584);
-    expect(responses).toHaveLength(1868);
+    expect(responses).toHaveLength(1869);
     expect(new Set(operations.map((operation) => operation.id)).size).toBe(
       operations.length,
     );

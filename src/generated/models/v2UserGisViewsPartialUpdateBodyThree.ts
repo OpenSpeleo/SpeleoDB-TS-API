@@ -16,4 +16,5 @@ export type V2UserGisViewsPartialUpdateBodyThree = {
   description?: string;
   /** If True, allows users to zoom to the precise location of the cave */
   allow_precise_zoom?: boolean;
+  geographic_bound?: string | null;
 };

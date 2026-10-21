@@ -963,6 +963,7 @@ import type {
   V2GisGeometriesCreateWithUrlEncoded406,
   V2GisGeometriesCreateWithUrlEncoded415,
   V2GisGeometriesCreateWithUrlEncodedParams,
+  V2GisGeometriesDestroy400,
   V2GisGeometriesDestroy403,
   V2GisGeometriesDestroy404,
   V2GisGeometriesDestroy406,
@@ -14807,6 +14808,11 @@ export type v2GisGeometriesDestroyResponse200 = {
   status: 200;
 };
 
+export type v2GisGeometriesDestroyResponse400 = {
+  data: V2GisGeometriesDestroy400;
+  status: 400;
+};
+
 export type v2GisGeometriesDestroyResponse403 = {
   data: V2GisGeometriesDestroy403;
   status: 403;
@@ -14827,6 +14833,7 @@ export type v2GisGeometriesDestroyResponseSuccess =
     headers: Headers;
   };
 export type v2GisGeometriesDestroyResponseError = (
+  | v2GisGeometriesDestroyResponse400
   | v2GisGeometriesDestroyResponse403
   | v2GisGeometriesDestroyResponse404
   | v2GisGeometriesDestroyResponse406
@@ -14868,6 +14875,7 @@ export const v2GisGeometriesDestroy = (
         operationId: "v2_gis_geometries_destroy",
         responses: {
           "200": { content: { "application/json": "json" } },
+          "400": { content: { "application/json": "json" } },
           "403": { content: { "application/json": "json" } },
           "404": { content: { "application/json": "json" } },
           "406": { content: { "application/json": "json" } },

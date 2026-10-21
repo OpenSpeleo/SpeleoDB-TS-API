@@ -950,12 +950,12 @@ export function v2_user_auth_token_partial_updateUrlEncoded(
 export function v2_user_gis_views_partial_updateMultipart(
   body?: object,
 ): FormData {
-  return unionFormData(body, []);
+  return unionFormData(body, ["geographic_bound"]);
 }
 export function v2_user_gis_views_partial_updateUrlEncoded(
   body?: object,
 ): URLSearchParams {
-  return unionUrlEncoded(body, []);
+  return unionUrlEncoded(body, ["geographic_bound"]);
 }
 export function v2_user_password_updateMultipart(body?: object): FormData {
   return unionFormData(body, []);

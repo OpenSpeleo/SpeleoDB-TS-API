@@ -46,6 +46,7 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
+        exclude: ^OpenAPI\.yaml$
         # Accept GitHub Actions `on` and capitalized YAML booleans.
         args:
           - --config-data
@@ -63,9 +64,11 @@ repos:
         # Allow latest image tags and distro-managed APT package versions.
         args:
           - --ignore
-          - DL3007 # Allow `latest` Docker image tags.
+          # Allow `latest` Docker image tags.
+          - DL3007
           - --ignore
-          - DL3008 # Allow APT packages without explicit version pins.
+          # Allow APT packages without explicit version pins.
+          - DL3008
 
   # -------------------------
   # JS/TS Linting
@@ -93,10 +96,12 @@ repos:
         always_run: true
 
       - id: generated-sdk-sync
-        name: Verify generated SDK matches canonical OpenAPI
+        name: Verify generated SDK matches package OpenAPI snapshot
         entry: bun run generate:check
         language: system
-        files: ^(openapi-source\.json|orval\.config\.mjs|src/|scripts/)
+        files: >-
+          (?x)^(OpenAPI\.yaml|openapi-source\.json|
+          orval\.config\.mjs|src/|scripts/)
         pass_filenames: false
 
   # -------------------------
