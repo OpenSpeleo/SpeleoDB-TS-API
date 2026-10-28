@@ -24,9 +24,30 @@ jobs:
       - run: bun run build
       - run: bun pm pack --dry-run --ignore-scripts
 
+  stage-contract:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TEST_SPELEODB_INSTANCE: ${{ secrets.TEST_SPELEODB_INSTANCE }}
+      TEST_SPELEODB_OAUTH: ${{ secrets.TEST_SPELEODB_OAUTH }}
+      TEST_SPELEODB_PROJECT_ID: ${{ secrets.TEST_SPELEODB_PROJECT_ID }}
+      TEST_SPELEODB_EMPTY_PROJECT_ID: ${{ secrets.TEST_SPELEODB_EMPTY_PROJECT_ID }}
+      TEST_SPELEODB_GIS_LAYER_ID: ${{ secrets.TEST_SPELEODB_GIS_LAYER_ID }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: test -s bun.lock && bun install --frozen-lockfile --ignore-scripts
+      - run: bun run test:stage
+
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: verify
+    needs: [verify, stage-contract]
     runs-on: ubuntu-latest
     environment: publish
     permissions:

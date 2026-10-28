@@ -80,6 +80,14 @@ build, then run `prek run --all-files`. Never install hooks. Preserve runtime
 coverage thresholds and exhaustive operation/status/media coverage. HTTP
 serialization witnesses do not replace real backend contract tests.
 
+Preserve both `tests/negotiation.test.ts` and the explicit `bun run test:stage`
+suite. The latter exercises the actual staging renderer with configured GitHub
+secrets, including JSON/HTML selection, wildcard/parameter precedence, format
+filtering, binary-only 406 controls, project downloads and signed source URLs.
+Trusted CI and publication require it; fork PRs retain deterministic coverage
+without receiving secrets. Never silently skip a requested live run when a
+secret is missing. Keep API credentials off anonymous signed-file requests.
+
 Release only through the existing trusted-publishing CI with the reviewed local
 schema snapshot and matching generated output. Git mutations, tags, pushes and
 publication require the user's explicit authorization; a review or

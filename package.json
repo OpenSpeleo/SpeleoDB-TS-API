@@ -35,6 +35,7 @@
     "typecheck": "bun ./node_modules/typescript/bin/tsc --noEmit && bun ./node_modules/typescript/bin/tsc -p tsconfig.test.json",
     "lint": "bun ./node_modules/eslint/bin/eslint.js .",
     "test": "bun run test:coverage",
+    "test:stage": "bun ./node_modules/vitest/vitest.mjs run --config vitest.stage.config.ts",
     "test:coverage": "bun ./node_modules/vitest/vitest.mjs run --coverage",
     "build": "bun scripts/build.mjs",
     "check": "bun run generate:check && bun run typecheck && bun run lint && bun run test && bun run build",

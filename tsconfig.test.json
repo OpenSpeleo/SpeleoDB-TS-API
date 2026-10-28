@@ -10,6 +10,7 @@
     "src/**/*.json",
     "tests/**/*.ts",
     "tests/**/*.json",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "vitest.stage.config.ts"
   ]
 }
