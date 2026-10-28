@@ -376,6 +376,14 @@ operations or optional fields can be a minor release; behavior-preserving fixes
 can be patches. While the package is `0.x`, communicate breaking changes clearly
 and use a new minor version rather than quietly shipping them as a patch.
 
+### Migrating from 0.4.x to 0.5.0
+
+Project responses can now return `STALAGMIGHT` in their `type` field. Include
+this value in exhaustive project-type handling. Project creation and updates
+accept the new choice case-insensitively, matching the existing project types.
+This release adds project classification; it does not add a Stalagmight survey
+converter or a new upload operation.
+
 ### Migrating from 0.3.x to 0.4.0
 
 GIS View management models now expose the optional nullable `geographic_bound`
@@ -521,7 +529,7 @@ bun pm pack --destination "$archive_dir" --ignore-scripts
 mkdir "$archive_dir/consumer"
 cd "$archive_dir/consumer"
 printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
-bun add "$archive_dir/speleodb-api-0.4.0.tgz"
+bun add "$archive_dir/speleodb-api-0.5.0.tgz"
 bun add --dev typescript@6.0.3
 cat > smoke.ts <<'TS'
 import { createApiClient, v2ProjectsList } from '@speleodb/api';
@@ -598,8 +606,8 @@ publication order is required for these checks.
 After the required tests and repository-local prek checks pass, inspect the
 reviewed archive and commit the same source and documentation. When publication
 and Git actions are authorized, push the reviewed SDK commit and its
-`v<package.json version>` tag to its own upstream. For version `0.4.0`, the tag
-must be `v0.4.0`; the workflow rejects a mismatch. The publish job waits for
+`v<package.json version>` tag to its own upstream. For version `0.5.0`, the tag
+must be `v0.5.0`; the workflow rejects a mismatch. The publish job waits for
 `verify`, performs its own frozen install and build, and runs
 `npm publish --access public` from that tagged checkout. It packages the tagged
 files itself; the local archive is the reviewed candidate, not a separate
@@ -609,7 +617,7 @@ Wait for the tag workflow's successful publish job, then query the actual
 registry version:
 
 ```sh
-bun pm view @speleodb/api@0.4.0 name version dist.integrity
+bun pm view @speleodb/api@0.5.0 name version dist.integrity
 ```
 
 Use the actual release version. Inspect the published archive's file list,
