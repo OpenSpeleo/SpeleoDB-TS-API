@@ -373,10 +373,11 @@ dispatchers or mutate standalone manifests to workspace-only dependency ranges.
 Treat removed operations, renamed exports, newly required inputs, narrowed
 response types and incompatible runtime behavior as breaking changes. Additive
 operations or optional fields can be a minor release; behavior-preserving fixes
-can be patches. While the package is `0.x`, communicate breaking changes clearly
-and use a new minor version rather than quietly shipping them as a patch.
+can be patches. Before the first stable release, communicate breaking changes
+clearly and use a new minor version rather than quietly shipping them as a
+patch.
 
-### Updating from 0.5.0 to 0.5.1
+### Snapshot defaults
 
 The packaged OpenAPI snapshot restores the existing cylinder and sensor
 installation `status` (`installed`) and landmark `collection_type` (`SHARED`)
@@ -384,7 +385,7 @@ defaults. These annotations describe existing model and serializer behavior;
 request handling, generated operation signatures, and Stalagmight support remain
 unchanged.
 
-### Migrating from 0.4.x to 0.5.0
+### Stalagmight project classification
 
 Project responses can now return `STALAGMIGHT` in their `type` field. Include
 this value in exhaustive project-type handling. Project creation and updates
@@ -392,7 +393,7 @@ accept the new choice case-insensitively, matching the existing project types.
 This release adds project classification; it does not add a Stalagmight survey
 converter or a new upload operation.
 
-### Migrating from 0.3.x to 0.4.0
+### GIS View geographic bounds
 
 GIS View management models now expose the optional nullable `geographic_bound`
 geometry UUID. Omit it on update to preserve the selection, or send `null` to
@@ -404,7 +405,7 @@ This setting clips only the public web display; signed GeoJSON downloads and OGC
 data remain unrestricted. Existing views default to no bound. Consumers that use
 exhaustive response-status handling must account for the new deletion response.
 
-### Migrating from 0.2.x to 0.3.0
+### Corrected request and response contracts
 
 This release corrects the generated contract to match existing backend behavior.
 Several corrections change callable signatures and required inputs, so consumers
@@ -417,10 +418,10 @@ Pass `undefined` when no query parameters are needed; the client still belongs
 in the final argument:
 
 ```ts
-// 0.2.x
+// Before the query parameter was added:
 await v2ProjectsList({ client });
 
-// 0.3.0
+// With the query parameter:
 await v2ProjectsList(undefined, { client });
 // Or explicitly select the documented machine renderer:
 await v2ProjectsList({ format: "json" }, { client });
@@ -473,12 +474,12 @@ restore obsolete SpeleoDB `/api/v1` support. Authentication's own `v1` segments
 remain supported. The generator continues to exclude only the exact obsolete
 SpeleoDB mount.
 
-Update each standalone consumer's exact dependency to `0.3.0` after publication,
-refresh its own lockfile, then run its types, tests and build outside the
-monorepo. Do not edit generated SDK files or weaken the source contract to
-preserve an outdated application call signature.
+Update each standalone consumer's exact dependency after publication, refresh
+its own lockfile, then run its types, tests and build outside the monorepo. Do
+not edit generated SDK files or weaken the source contract to preserve an
+outdated application call signature.
 
-### Migrating from 0.1.x to 0.2.0
+### Required installation projects and download errors
 
 Cylinder installation creation now requires `project` in JSON, multipart and
 URL-encoded inputs, matching the backend's non-null project association. Include
@@ -489,10 +490,10 @@ results. Narrow the response by `kind` and `status` as usual. The XHR adapter
 now rejects `status-first-json` before sending; use fetch without upload
 observers when that response policy is required.
 
-These corrections require the 0.2.0 minor release because creation inputs are
-stricter. Update the exact package pin and standalone lock in each consumer,
-then run its own types, tests and build against the published package. The SDK
-retains its reviewed local schema snapshot.
+These corrections require a minor release because creation inputs are stricter.
+Update the exact package pin and standalone lock in each consumer, then run its
+own types, tests and build against the published package. The SDK retains its
+reviewed local schema snapshot.
 
 ### Release coordination
 
@@ -514,11 +515,11 @@ triggers publication when all gates pass; ordinary branch pushes and pull
 requests only validate.
 
 Before a version is published to npm, a live monorepo build does not prove a
-standalone release can install it. This also applies to the initial `0.1.0`
-release. Validate an explicitly reviewed package archive in an isolated consumer
-copy, or wait for the authorized registry release. Never fabricate registry
-integrity, URLs or revisions, and do not represent unpublished-consumer lock
-failures as successful release verification.
+standalone release can install it. This also applies to the initial release.
+Validate an explicitly reviewed package archive in an isolated consumer copy, or
+wait for the authorized registry release. Never fabricate registry integrity,
+URLs or revisions, and do not represent unpublished-consumer lock failures as
+successful release verification.
 
 Before publication inspect `bun pm pack --dry-run --ignore-scripts`. The package
 contains source, `OpenAPI.yaml`, its digest record, README, maintenance
@@ -528,8 +529,8 @@ inside the archive. A source package must be tested through an installed archive
 as well as a workspace source link.
 
 For a concrete source-only archive smoke test, first run the SDK checks above,
-then use an empty directory outside all workspaces. Substitute the version in
-the archive filename when the package version changes:
+then use an empty directory outside all workspaces. The glob selects the archive
+created in that new directory:
 
 ```sh
 archive_dir="$(mktemp -d)"
@@ -537,7 +538,7 @@ bun pm pack --destination "$archive_dir" --ignore-scripts
 mkdir "$archive_dir/consumer"
 cd "$archive_dir/consumer"
 printf '{"name":"sdk-smoke","private":true,"type":"module"}\n' > package.json
-bun add "$archive_dir/speleodb-api-0.5.1.tgz"
+bun add "$archive_dir"/speleodb-api-*.tgz
 bun add --dev typescript@6.0.3
 cat > smoke.ts <<'TS'
 import { createApiClient, v2ProjectsList } from '@speleodb/api';
@@ -599,11 +600,11 @@ days; recreate an expired configuration before retrying. See npm's
 [trusted publishing documentation](https://docs.npmjs.com/trusted-publishers/)
 for setup and troubleshooting.
 
-For the initial `0.1.0` release, confirm npm provides the package's settings and
-permits this trusted publisher to be configured. A registry `404` or successful
-local login does not establish this prerequisite. If the new package cannot yet
-be configured, finish the registry's required initial setup before a release tag
-is pushed. Keep that unresolved setup explicit; do not add a token-based
+For the initial release, confirm npm provides the package's settings and permits
+this trusted publisher to be configured. A registry `404` or successful local
+login does not establish this prerequisite. If the new package cannot yet be
+configured, finish the registry's required initial setup before a release tag is
+pushed. Keep that unresolved setup explicit; do not add a token-based
 publication fallback or a placeholder package to bypass it.
 
 Run `bun run check` against the checked-in snapshot before tagging. CI uses the
@@ -614,18 +615,17 @@ publication order is required for these checks.
 After the required tests and repository-local prek checks pass, inspect the
 reviewed archive and commit the same source and documentation. When publication
 and Git actions are authorized, push the reviewed SDK commit and its
-`v<package.json version>` tag to its own upstream. For version `0.5.1`, the tag
-must be `v0.5.1`; the workflow rejects a mismatch. The publish job waits for
-`verify`, performs its own frozen install and build, and runs
-`npm publish --access public` from that tagged checkout. It packages the tagged
-files itself; the local archive is the reviewed candidate, not a separate
-manually uploaded release.
+`v<package.json version>` tag to its own upstream. The workflow rejects a tag
+that does not match the manifest. The publish job waits for `verify`, performs
+its own frozen install and build, and runs `npm publish --access public` from
+that tagged checkout. It packages the tagged files itself; the local archive is
+the reviewed candidate, not a separate manually uploaded release.
 
 Wait for the tag workflow's successful publish job, then query the actual
 registry version:
 
 ```sh
-bun pm view @speleodb/api@0.5.1 name version dist.integrity
+bun pm view "@speleodb/api@$(bun -p 'require("./package.json").version')" name version dist.integrity
 ```
 
 Use the actual release version. Inspect the published archive's file list,
