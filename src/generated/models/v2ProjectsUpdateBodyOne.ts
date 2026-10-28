@@ -25,8 +25,8 @@ export type V2ProjectsUpdateBodyOne = {
    */
   visibility?: string;
   /**
-   * Case-insensitive choice: ARIANE, COMPASS, STICKMAPS, THERION, WALLS, OTHER
-   * @pattern ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+   * Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT, STICKMAPS, THERION, WALLS, OTHER
+   * @pattern ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
    */
   type: string;
   /**

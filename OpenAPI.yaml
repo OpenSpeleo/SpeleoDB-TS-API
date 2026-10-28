@@ -2728,7 +2728,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -2823,7 +2822,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -2918,7 +2916,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -3283,7 +3280,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -3384,7 +3380,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -3485,7 +3480,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
               required:
               - cylinder
               - install_date
@@ -3710,7 +3704,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
           application/x-www-form-urlencoded:
             schema:
               type: object
@@ -3805,7 +3798,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
           multipart/form-data:
             schema:
               type: object
@@ -3900,7 +3892,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
         required: false
       security:
       - cookieAuth: []
@@ -20032,9 +20023,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -20377,9 +20368,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -20726,9 +20717,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -21352,9 +21343,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -21697,9 +21688,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -22046,9 +22037,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -22519,9 +22510,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -22859,9 +22850,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -23203,9 +23194,9 @@ paths:
                   default: PRIVATE
                 type:
                   type: string
-                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-                  description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS,
-                    THERION, WALLS, OTHER'
+                  pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+                  description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT,
+                    STICKMAPS, THERION, WALLS, OTHER'
                 name:
                   type: string
                   minLength: 1
@@ -33982,7 +33973,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   type: string
                   format: date
@@ -34039,7 +34029,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   anyOf:
                   - type: string
@@ -34104,7 +34093,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   anyOf:
                   - type: string
@@ -34430,7 +34418,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   type: string
                   format: date
@@ -34490,7 +34477,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   anyOf:
                   - type: string
@@ -34558,7 +34544,6 @@ paths:
                     * `lost` - Lost
                     * `abandoned` - Abandoned
                   x-spec-enum-id: b6864bea2fccb91c
-                  default: installed
                 expiracy_memory_date:
                   anyOf:
                   - type: string
@@ -50383,7 +50368,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
         created_by:
           type: string
           format: email
@@ -50512,7 +50496,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
       required:
       - cylinder
       - install_date
@@ -50719,7 +50702,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
       required:
       - cylinder
       - install_date
@@ -53371,7 +53353,6 @@ components:
             * `SHARED` - Shared
           x-spec-enum-id: 2f66870827ed3f1c
           readOnly: true
-          default: SHARED
         personal_owner:
           type: integer
           readOnly: true
@@ -53573,7 +53554,6 @@ components:
             * `SHARED` - Shared
           x-spec-enum-id: 2f66870827ed3f1c
           readOnly: true
-          default: SHARED
         personal_owner:
           type: integer
           readOnly: true
@@ -54007,7 +53987,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
     PatchedCylinderPressureCheckRequest:
       type: object
       description: Serializer for CylinderPressureCheck model.
@@ -54958,9 +54937,9 @@ components:
           default: PRIVATE
         type:
           type: string
-          pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-          description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS, THERION,
-            WALLS, OTHER'
+          pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+          description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT, STICKMAPS,
+            THERION, WALLS, OTHER'
         name:
           type: string
           minLength: 1
@@ -55090,7 +55069,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
         expiracy_memory_date:
           type: string
           format: date
@@ -56272,6 +56250,7 @@ components:
           enum:
           - ARIANE
           - COMPASS
+          - STALAGMIGHT
           - STICKMAPS
           - THERION
           - WALLS
@@ -56793,9 +56772,9 @@ components:
           default: PRIVATE
         type:
           type: string
-          pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
-          description: 'Case-insensitive choice: ARIANE, COMPASS, STICKMAPS, THERION,
-            WALLS, OTHER'
+          pattern: ^(?:[Aa][Rr][Ii][Aa][Nn][Ee]|[Cc][Oo][Mm][Pp][Aa][Ss][Ss]|[Ss][Tt][Aa][Ll][Aa][Gg][Mm][Ii][Gg][Hh][Tt]|[Ss][Tt][Ii][Cc][Kk][Mm][Aa][Pp][Ss]|[Tt][Hh][Ee][Rr][Ii][Oo][Nn]|[Ww][Aa][Ll][Ll][Ss]|[Oo][Tt][Hh][Ee][Rr])$
+          description: 'Case-insensitive choice: ARIANE, COMPASS, STALAGMIGHT, STICKMAPS,
+            THERION, WALLS, OTHER'
         name:
           type: string
           minLength: 1
@@ -57379,6 +57358,7 @@ components:
           enum:
           - ARIANE
           - COMPASS
+          - STALAGMIGHT
           - STICKMAPS
           - THERION
           - WALLS
@@ -58040,7 +58020,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
         expiracy_memory_date:
           type: string
           format: date
@@ -58128,7 +58107,6 @@ components:
             * `lost` - Lost
             * `abandoned` - Abandoned
           x-spec-enum-id: b6864bea2fccb91c
-          default: installed
         expiracy_memory_date:
           type: string
           format: date

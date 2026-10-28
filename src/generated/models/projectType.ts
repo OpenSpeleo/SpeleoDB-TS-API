@@ -7,6 +7,7 @@ export type ProjectType = (typeof ProjectType)[keyof typeof ProjectType];
 export const ProjectType = {
   ARIANE: "ARIANE",
   COMPASS: "COMPASS",
+  STALAGMIGHT: "STALAGMIGHT",
   STICKMAPS: "STICKMAPS",
   THERION: "THERION",
   WALLS: "WALLS",

@@ -8,6 +8,7 @@ export type ProjectWithGeoJsonType =
 export const ProjectWithGeoJsonType = {
   ARIANE: "ARIANE",
   COMPASS: "COMPASS",
+  STALAGMIGHT: "STALAGMIGHT",
   STICKMAPS: "STICKMAPS",
   THERION: "THERION",
   WALLS: "WALLS",
