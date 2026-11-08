@@ -130,6 +130,13 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: package-dry-run
+        name: Verify package archive
+        entry: bun pm pack --dry-run --ignore-scripts
+        language: system
+        pass_filenames: false
+        always_run: true
+
   # -------------------------
   # Unittests
   # -------------------------

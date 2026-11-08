@@ -16,13 +16,10 @@ jobs:
         with:
           bun-version-file: .bun-version
       - run: test -s bun.lock && bun install --frozen-lockfile --ignore-scripts
-      - run: bun run generate:check
-      - run: bun run lint
-      - run: bun run format:check
-      - run: bun run typecheck
-      - run: bun run test
-      - run: bun run build
-      - run: bun pm pack --dry-run --ignore-scripts
+      - uses: j178/prek-action@v3.0.0
+        with:
+          extra-args: --all-files
+          cache: true
 
   stage-contract:
     if: >-
@@ -35,7 +32,8 @@ jobs:
       TEST_SPELEODB_INSTANCE: ${{ secrets.TEST_SPELEODB_INSTANCE }}
       TEST_SPELEODB_OAUTH: ${{ secrets.TEST_SPELEODB_OAUTH }}
       TEST_SPELEODB_PROJECT_ID: ${{ secrets.TEST_SPELEODB_PROJECT_ID }}
-      TEST_SPELEODB_EMPTY_PROJECT_ID: ${{ secrets.TEST_SPELEODB_EMPTY_PROJECT_ID }}
+      TEST_SPELEODB_EMPTY_PROJECT_ID:
+        ${{ secrets.TEST_SPELEODB_EMPTY_PROJECT_ID }}
       TEST_SPELEODB_GIS_LAYER_ID: ${{ secrets.TEST_SPELEODB_GIS_LAYER_ID }}
     steps:
       - uses: actions/checkout@v7.0.1

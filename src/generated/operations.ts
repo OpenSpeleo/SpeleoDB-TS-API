@@ -27312,6 +27312,9 @@ export const getV2ProjectsDownloadRetrieveByFormatUrl = (
     : `/api/v2/projects/${encodeURIComponent(String(id))}/download/${encodeURIComponent(String(fileformat))}/`;
 };
 
+/**
+ * Download the latest revision in the requested format. Accepted fileformat values: dump, ariane_tml, ariane_tmlu, ariane_agr, compass_zip, stalagmight.
+ */
 export const v2ProjectsDownloadRetrieveByFormat = (
   id: string,
   fileformat: string,
@@ -27415,7 +27418,7 @@ export const getV2ProjectsDownloadRetrieveByFormatAtHashUrl = (
 };
 
 /**
- * Dedicated view for hexsha route to provide unique operation_id.
+ * Download the specified revision in the requested format. Accepted fileformat values: dump, ariane_tml, ariane_tmlu, ariane_agr, compass_zip, stalagmight.
  */
 export const v2ProjectsDownloadRetrieveByFormatAtHash = (
   id: string,
@@ -31619,7 +31622,7 @@ export const getV2ProjectsUploadUrl = (
 };
 
 /**
- * Upload repeated artifact file parts with a commit message. Compass ZIP format accepts exactly one .zip file. At most 20 files are accepted; each file is limited to 150 MiB. The current combined-byte limit is 24657920 bytes.
+ * Upload repeated artifact file parts with a commit message. Compass ZIP format accepts exactly one .zip file. Accepted fileformat values: other, auto, ariane_tml, ariane_tmlu, ariane_agr, compass_zip, compass_manual, walls_srv, walls_wpj, stickmaps, stalagmight. At most 20 files are accepted; each file is limited to 150 MiB. The current combined-byte limit is 24657920 bytes.
  */
 export const v2ProjectsUpload = (
   id: string,
