@@ -31540,7 +31540,7 @@ export const getV2ProjectsUploadUrl = (
 };
 
 /**
- * Upload repeated artifact file parts with a commit message. Compass ZIP format accepts exactly one .zip file. Accepted fileformat values: other, auto, ariane_tml, ariane_tmlu, ariane_agr, compass_zip, compass_manual, walls_srv, walls_wpj, stickmaps, stalagmight. At most 20 files are accepted; each file is limited to 150 MiB. The current combined-byte limit is 24657920 bytes.
+ * Upload repeated artifact file parts with a commit message. Compass ZIP format accepts exactly one .zip file. Accepted fileformat values: other, auto, ariane_tml, ariane_tmlu, ariane_agr, compass_zip, compass_manual, walls_srv, walls_wpj, stickmaps, stalagmight. At most 20 files are accepted; each file is limited to 5 MiB and their combined size is limited to 7 MiB. Size limits are inclusive and measure uploaded artifact bytes. Commit messages are trimmed and newline groups are replaced with '. ' before applying the 1024-character limit.
  */
 export const v2ProjectsUpload = (
   id: string,
