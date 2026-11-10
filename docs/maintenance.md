@@ -47,6 +47,11 @@ repository or requiring a backend revision.
 
 ## Updating the local schema snapshot
 
+Revision `authored_date` and `committed_date` fields use the schema's
+`date-time` format. Their generated TypeScript representation remains a string;
+the backend emits UTC ISO 8601 timestamps, and applications own parsing and
+local display. Do not interpret these values as timezone-less wall times.
+
 `OpenAPI.yaml` is the SDK's complete generation input. Import a reviewed API
 export manually when adopting a contract change, preserve its exact bytes, and
 update `openapi-source.json` alongside it. This explicit import is the only

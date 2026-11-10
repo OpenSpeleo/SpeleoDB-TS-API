@@ -9,7 +9,6 @@ export interface ProjectCommit {
   readonly id: string;
   readonly author_name: string;
   readonly author_email: string;
-  /** @pattern ^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$ */
   authored_date: string;
   readonly dt_since: string;
   readonly formats: readonly ProjectCommitFormatsItem[];

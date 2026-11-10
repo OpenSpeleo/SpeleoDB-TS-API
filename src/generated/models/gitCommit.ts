@@ -9,11 +9,9 @@ import type { GitCommitFormat } from "./gitCommitFormat";
 export interface GitCommit {
   author_name: string;
   author_email: string;
-  /** @pattern ^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$ */
   authored_date: string;
   committer_name: string;
   committer_email: string;
-  /** @pattern ^\d{4}/\d{2}/\d{2} \d{2}:\d{2}$ */
   committed_date: string;
   readonly dt_since: string;
   hexsha: string;
