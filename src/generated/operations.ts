@@ -248,7 +248,6 @@ import type {
   PluginRelease,
   Project,
   ProjectGeoJSONCommit,
-  ProjectGeoJSONStatus,
   ProjectGitExplorerResponse,
   ProjectReleaseRequestRequest,
   ProjectRevisionsResponse,
@@ -1627,10 +1626,6 @@ import type {
   V2PluginReleasesRetrieve404,
   V2PluginReleasesRetrieve406,
   V2PluginReleasesRetrieveParams,
-  V2ProjectGeojsonStatus403,
-  V2ProjectGeojsonStatus404,
-  V2ProjectGeojsonStatus406,
-  V2ProjectGeojsonStatusParams,
   V2ProjectRetrieve403,
   V2ProjectRetrieve404,
   V2ProjectRetrieve406,
@@ -28113,83 +28108,6 @@ export const v2ProjectsGeojsonRetrieve = (
     {
       operation: {
         operationId: "v2_projects_geojson_retrieve",
-        responses: {
-          "200": { content: { "application/json": "json" } },
-          "403": { content: { "application/json": "json" } },
-          "404": { content: { "application/json": "json" } },
-          "406": { content: { "application/json": "json" } },
-        },
-      },
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export type v2ProjectGeojsonStatusResponse200 = {
-  data: ProjectGeoJSONStatus;
-  status: 200;
-};
-
-export type v2ProjectGeojsonStatusResponse403 = {
-  data: V2ProjectGeojsonStatus403;
-  status: 403;
-};
-
-export type v2ProjectGeojsonStatusResponse404 = {
-  data: V2ProjectGeojsonStatus404;
-  status: 404;
-};
-
-export type v2ProjectGeojsonStatusResponse406 = {
-  data: V2ProjectGeojsonStatus406;
-  status: 406;
-};
-
-export type v2ProjectGeojsonStatusResponseSuccess =
-  v2ProjectGeojsonStatusResponse200 & {
-    headers: Headers;
-  };
-export type v2ProjectGeojsonStatusResponseError = (
-  | v2ProjectGeojsonStatusResponse403
-  | v2ProjectGeojsonStatusResponse404
-  | v2ProjectGeojsonStatusResponse406
-) & {
-  headers: Headers;
-};
-
-export type v2ProjectGeojsonStatusResponse =
-  v2ProjectGeojsonStatusResponseSuccess | v2ProjectGeojsonStatusResponseError;
-
-export const getV2ProjectGeojsonStatusUrl = (
-  id: string,
-  params?: V2ProjectGeojsonStatusParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/v2/projects/${encodeURIComponent(String(id))}/geojson-status/?${stringifiedParams}`
-    : `/api/v2/projects/${encodeURIComponent(String(id))}/geojson-status/`;
-};
-
-export const v2ProjectGeojsonStatus = (
-  id: string,
-  params?: V2ProjectGeojsonStatusParams,
-  options?: Parameters<typeof apiRequest>[1],
-) => {
-  return apiRequest<v2ProjectGeojsonStatusResponse>(
-    getV2ProjectGeojsonStatusUrl(id, params),
-    {
-      operation: {
-        operationId: "v2_project_geojson_status",
         responses: {
           "200": { content: { "application/json": "json" } },
           "403": { content: { "application/json": "json" } },

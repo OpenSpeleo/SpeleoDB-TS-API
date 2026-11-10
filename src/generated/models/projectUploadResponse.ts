@@ -7,7 +7,6 @@ export interface ProjectUploadResponse {
   files: string[];
   message: string;
   hexsha: string;
-  geojson_status: string;
   /** @nullable */
   browser_url: string | null;
   project: Project;
