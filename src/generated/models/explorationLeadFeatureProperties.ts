@@ -4,6 +4,12 @@
 
 export interface ExplorationLeadFeatureProperties {
   description: string;
+  /**
+   * @maxItems 3
+   * @items.minimum 0
+   * @items.exclusiveMaximum 360
+   */
+  headings: number[];
   created_by: string;
   creation_date: string;
   modified_date: string;

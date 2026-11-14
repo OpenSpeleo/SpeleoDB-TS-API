@@ -8,6 +8,12 @@
 export interface PatchedExplorationLeadRequest {
   /** Optional description of the lead */
   description?: string;
+  /**
+   * @maxItems 3
+   * @items.minimum 0
+   * @items.exclusiveMaximum 360
+   */
+  headings?: number[];
   /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-90, 90]. */
   latitude?: number | boolean | string;
   /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-180, 180]. */

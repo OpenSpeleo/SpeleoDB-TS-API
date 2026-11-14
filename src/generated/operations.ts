@@ -81,7 +81,6 @@ import type {
   ExperimentUserPermissionSpecificApiViewPutResponse,
   ExplorationLead,
   ExplorationLeadGeoJSONCollection,
-  ExplorationLeadRequest,
   ExplorationLeadSpecificApiViewDeleteResponse,
   GISGeometry,
   GISGeometryList,
@@ -233,7 +232,6 @@ import type {
   PatchedAuthTokenRequest,
   PatchedCylinderFleetRequest,
   PatchedCylinderPressureCheckRequest,
-  PatchedExplorationLeadRequest,
   PatchedGISLayerRequest,
   PatchedGPSTrackRequest,
   PatchedLandmarkCollectionRequest,
@@ -897,6 +895,7 @@ import type {
   V2ExplorationLeadsGeojsonRetrieve404,
   V2ExplorationLeadsGeojsonRetrieve406,
   V2ExplorationLeadsGeojsonRetrieveParams,
+  V2ExplorationLeadsPartialUpdateBodyOne,
   V2ExplorationLeadsPartialUpdateBodyThree,
   V2ExplorationLeadsPartialUpdateBodyTwo,
   V2ExplorationLeadsPartialUpdateWithFormData400,
@@ -921,6 +920,7 @@ import type {
   V2ExplorationLeadsRetrieve404,
   V2ExplorationLeadsRetrieve406,
   V2ExplorationLeadsRetrieveParams,
+  V2ExplorationLeadsUpdateBodyOne,
   V2ExplorationLeadsUpdateBodyThree,
   V2ExplorationLeadsUpdateBodyTwo,
   V2ExplorationLeadsUpdateWithFormData400,
@@ -1679,6 +1679,7 @@ import type {
   V2ProjectsDownloadRetrieveByFormatAtHash500,
   V2ProjectsDownloadRetrieveByFormatAtHashParams,
   V2ProjectsDownloadRetrieveByFormatParams,
+  V2ProjectsExplorationLeadsCreateBodyOne,
   V2ProjectsExplorationLeadsCreateBodyThree,
   V2ProjectsExplorationLeadsCreateBodyTwo,
   V2ProjectsExplorationLeadsCreateWithFormData400,
@@ -13173,7 +13174,7 @@ export const getV2ExplorationLeadsUpdateWithJsonUrl = (
  */
 export const v2ExplorationLeadsUpdateWithJson = (
   id: string,
-  explorationLeadRequest: ExplorationLeadRequest,
+  v2ExplorationLeadsUpdateBodyOne: V2ExplorationLeadsUpdateBodyOne,
   params?: V2ExplorationLeadsUpdateWithJsonParams,
   options?: Parameters<typeof apiRequest>[1],
 ) => {
@@ -13218,7 +13219,7 @@ export const v2ExplorationLeadsUpdateWithJson = (
         "Content-Type": "application/json",
         ...getHeaders(options?.headers),
       },
-      body: JSON.stringify(explorationLeadRequest),
+      body: JSON.stringify(v2ExplorationLeadsUpdateBodyOne),
     },
   );
 };
@@ -13520,7 +13521,7 @@ export const getV2ExplorationLeadsPartialUpdateWithJsonUrl = (
  */
 export const v2ExplorationLeadsPartialUpdateWithJson = (
   id: string,
-  patchedExplorationLeadRequest?: PatchedExplorationLeadRequest,
+  v2ExplorationLeadsPartialUpdateBodyOne?: V2ExplorationLeadsPartialUpdateBodyOne,
   params?: V2ExplorationLeadsPartialUpdateWithJsonParams,
   options?: Parameters<typeof apiRequest>[1],
 ) => {
@@ -13565,7 +13566,7 @@ export const v2ExplorationLeadsPartialUpdateWithJson = (
         "Content-Type": "application/json",
         ...getHeaders(options?.headers),
       },
-      body: JSON.stringify(patchedExplorationLeadRequest),
+      body: JSON.stringify(v2ExplorationLeadsPartialUpdateBodyOne),
     },
   );
 };
@@ -27681,7 +27682,7 @@ export const getV2ProjectsExplorationLeadsCreateWithJsonUrl = (
  */
 export const v2ProjectsExplorationLeadsCreateWithJson = (
   id: string,
-  explorationLeadRequest: ExplorationLeadRequest,
+  v2ProjectsExplorationLeadsCreateBodyOne: V2ProjectsExplorationLeadsCreateBodyOne,
   params?: V2ProjectsExplorationLeadsCreateWithJsonParams,
   options?: Parameters<typeof apiRequest>[1],
 ) => {
@@ -27726,7 +27727,7 @@ export const v2ProjectsExplorationLeadsCreateWithJson = (
         "Content-Type": "application/json",
         ...getHeaders(options?.headers),
       },
-      body: JSON.stringify(explorationLeadRequest),
+      body: JSON.stringify(v2ProjectsExplorationLeadsCreateBodyOne),
     },
   );
 };

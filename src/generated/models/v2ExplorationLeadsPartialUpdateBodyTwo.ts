@@ -8,6 +8,8 @@
 export type V2ExplorationLeadsPartialUpdateBodyTwo = {
   /** Optional description of the lead */
   description?: string;
+  /** JSON-encoded value. */
+  headings?: string;
   /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-90, 90]. */
   latitude?: number | string;
   /** Numeric coordinate (booleans become 0/1; numeric strings accept digit-separating underscores), rounded to seven decimal places before validation within [-180, 180]. */

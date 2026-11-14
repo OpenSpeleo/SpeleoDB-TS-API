@@ -9,6 +9,12 @@ export interface ExplorationLead {
   readonly id: string;
   /** Optional description of the lead */
   description: string;
+  /**
+   * @maxItems 3
+   * @items.minimum 0
+   * @items.exclusiveMaximum 360
+   */
+  headings: number[];
   latitude: number;
   longitude: number;
   readonly project: string;
