@@ -8,10 +8,17 @@ import {
   v2ExplorationLeadsPartialUpdateWithUrlEncoded,
 } from "../src/index";
 
-it.each([undefined, [], [22.5, 270]])(
-  "preserves heading omission or reset across request encodings: %j",
-  async (headings) => {
-    const received: { media: string; headings: unknown }[] = [];
+it.each([
+  undefined,
+  [{ heading: null, checked: true }],
+  [
+    { heading: 22.5, checked: true },
+    { heading: 270, checked: false },
+  ],
+])(
+  "preserves direction omission, null bearings and checked states across request encodings: %j",
+  async (directions) => {
+    const received: { media: string; directions: unknown }[] = [];
     const server = createServer((request, response) => {
       void (async () => {
         const chunks: Buffer[] = [];
@@ -21,18 +28,18 @@ it.each([undefined, [], [22.5, 270]])(
         const media = request.headers["content-type"]!;
         let value: unknown;
         if (media.startsWith("application/json")) {
-          value = (JSON.parse(bytes.toString()) as { headings?: unknown })
-            .headings;
+          value = (JSON.parse(bytes.toString()) as { directions?: unknown })
+            .directions;
         } else if (media.startsWith("multipart/form-data")) {
           const form = await new Response(bytes, {
             headers: { "Content-Type": media },
           }).formData();
-          value = form.has("headings") ? form.get("headings") : undefined;
+          value = form.has("directions") ? form.get("directions") : undefined;
         } else {
           const form = new URLSearchParams(bytes.toString());
-          value = form.has("headings") ? form.get("headings") : undefined;
+          value = form.has("directions") ? form.get("directions") : undefined;
         }
-        received.push({ media, headings: value });
+        received.push({ media, directions: value });
         // This real loopback fixture verifies request bytes. The backend suite
         // verifies validation and persisted reset/omission behavior separately.
         response.writeHead(400, { "Content-Type": "application/json" });
@@ -49,13 +56,13 @@ it.each([undefined, [], [22.5, 270]])(
       });
       const body = {
         description: "Keep the field notes",
-        ...(headings === undefined ? {} : { headings }),
+        ...(directions === undefined ? {} : { directions }),
       };
       const formBody = {
         description: body.description,
-        ...(headings === undefined
+        ...(directions === undefined
           ? {}
-          : { headings: JSON.stringify(headings) }),
+          : { directions: JSON.stringify(directions) }),
       };
       await v2ExplorationLeadsPartialUpdateWithJson("lead", body, undefined, {
         client,
@@ -72,10 +79,10 @@ it.each([undefined, [], [22.5, 270]])(
         undefined,
         { client },
       );
-      expect(received.map((request) => request.headings)).toEqual([
-        headings,
-        formBody.headings,
-        formBody.headings,
+      expect(received.map((request) => request.directions)).toEqual([
+        directions,
+        formBody.directions,
+        formBody.directions,
       ]);
       expect(received[0]!.media).toContain("application/json");
       expect(received[1]!.media).toContain("multipart/form-data");

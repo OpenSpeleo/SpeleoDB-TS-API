@@ -500,6 +500,34 @@ Update the exact package pin and standalone lock in each consumer, then run its
 own types, tests and build against the published package. The SDK retains its
 reviewed local schema snapshot.
 
+### Exploration lead directions and checked status
+
+Exploration lead responses and GeoJSON properties now expose `directions` and
+the derived, read-only `is_fully_checked` value. The former `headings` array is
+replaced by one to three complete `{ heading, checked }` objects. Each heading
+is a finite number in `[0, 360)` or `null`; each checked status is a boolean. An
+undirected lead remains an entry and can be checked independently. Creating a
+lead without directions gives it one unchecked entry with a null heading.
+
+JSON create/update operations accept the structured array. Multipart and
+URL-encoded variants accept its JSON string, produced with `JSON.stringify`. For
+an update, omitting `directions` preserves every existing heading and status;
+providing it replaces the whole ordered list. To unset a bearing, send that
+entry with `heading: null` and its existing checked status. Neither `null` for
+the entire field nor an empty array clears the list: both are invalid. Checking
+or unchecking all entries means sending the complete list with each `checked`
+value changed. The server derives completion when every entry is checked;
+clients must not send `is_fully_checked` as a writable field.
+
+Consumers must migrate their request construction, response reads and local
+caches together with the backend contract. The SDK does not retain a `headings`
+alias or convert cached application data. The generated types describe the wire
+contract; server validation still enforces the list bounds and numeric range.
+`tests/exploration-leads.test.ts` observes real loopback HTTP bytes for omitted
+directions, a checked null bearing and mixed statuses across JSON, multipart and
+URL-encoded requests. Backend endpoint tests own validation and persistence
+guarantees.
+
 ### Release coordination
 
 The SDK version in `package.json` is independent of the backend version in
