@@ -2899,6 +2899,10 @@ import type {
   V2UserDashboardStatsRetrieve404,
   V2UserDashboardStatsRetrieve406,
   V2UserDashboardStatsRetrieveParams,
+  V2UserDonationCampaignsDismissCreate403,
+  V2UserDonationCampaignsDismissCreate404,
+  V2UserDonationCampaignsDismissCreate406,
+  V2UserDonationCampaignsDismissCreateParams,
   V2UserExportsCreate403,
   V2UserExportsCreate404,
   V2UserExportsCreate406,
@@ -49592,6 +49596,84 @@ export const v2UserDashboardStatsRetrieve = (
       },
       ...options,
       method: "GET",
+    },
+  );
+};
+
+export type v2UserDonationCampaignsDismissCreateResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type v2UserDonationCampaignsDismissCreateResponse403 = {
+  data: V2UserDonationCampaignsDismissCreate403;
+  status: 403;
+};
+
+export type v2UserDonationCampaignsDismissCreateResponse404 = {
+  data: V2UserDonationCampaignsDismissCreate404;
+  status: 404;
+};
+
+export type v2UserDonationCampaignsDismissCreateResponse406 = {
+  data: V2UserDonationCampaignsDismissCreate406;
+  status: 406;
+};
+
+export type v2UserDonationCampaignsDismissCreateResponseSuccess =
+  v2UserDonationCampaignsDismissCreateResponse204 & {
+    headers: Headers;
+  };
+export type v2UserDonationCampaignsDismissCreateResponseError = (
+  | v2UserDonationCampaignsDismissCreateResponse403
+  | v2UserDonationCampaignsDismissCreateResponse404
+  | v2UserDonationCampaignsDismissCreateResponse406
+) & {
+  headers: Headers;
+};
+
+export type v2UserDonationCampaignsDismissCreateResponse =
+  | v2UserDonationCampaignsDismissCreateResponseSuccess
+  | v2UserDonationCampaignsDismissCreateResponseError;
+
+export const getV2UserDonationCampaignsDismissCreateUrl = (
+  campaignId: string,
+  params?: V2UserDonationCampaignsDismissCreateParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v2/user/donation-campaigns/${encodeURIComponent(String(campaignId))}/dismiss/?${stringifiedParams}`
+    : `/api/v2/user/donation-campaigns/${encodeURIComponent(String(campaignId))}/dismiss/`;
+};
+
+export const v2UserDonationCampaignsDismissCreate = (
+  campaignId: string,
+  params?: V2UserDonationCampaignsDismissCreateParams,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  return apiRequest<v2UserDonationCampaignsDismissCreateResponse>(
+    getV2UserDonationCampaignsDismissCreateUrl(campaignId, params),
+    {
+      operation: {
+        operationId: "v2_user_donation_campaigns_dismiss_create",
+        responses: {
+          "204": { content: {} },
+          "403": { content: { "application/json": "json" } },
+          "404": { content: { "application/json": "json" } },
+          "406": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
     },
   );
 };
