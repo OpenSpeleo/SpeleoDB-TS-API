@@ -42,6 +42,10 @@ Orval currently emits an optional final options parameter even though this
 runtime requires `client`. Omitting it fails before transport. Operation
 metadata is supplied by generated code and must not be overridden by callers.
 
+Project create and update requests accept an optional `description`. Omit it on
+update to preserve the stored text, or send an empty string to clear it. Project
+responses always include a string.
+
 ## Results, cancellation and uploads
 
 HTTP responses resolve with `status`, `data`, `headers` and `kind`. Narrow

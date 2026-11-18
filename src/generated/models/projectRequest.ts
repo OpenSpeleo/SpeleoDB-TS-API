@@ -34,8 +34,7 @@ export interface ProjectRequest {
    * @maxLength 255
    */
   name: string;
-  /** @minLength 1 */
-  description: string;
+  description?: string;
   /**
    * Hex color code for map rendering (e.g. #e41a1c)
    * @minLength 1

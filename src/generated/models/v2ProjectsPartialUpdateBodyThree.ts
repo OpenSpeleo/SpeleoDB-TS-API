@@ -34,7 +34,6 @@ export type V2ProjectsPartialUpdateBodyThree = {
    * @maxLength 255
    */
   name?: string;
-  /** @minLength 1 */
   description?: string;
   /**
    * Hex color code for map rendering (e.g. #e41a1c)
