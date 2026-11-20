@@ -21,6 +21,7 @@ import type {
   AuthAppAccountPhonePost409,
   AuthAppAuthPhoneVerifyPost409,
   AuthAppAuthPhoneVerifyResendPost409,
+  AuthAuthenticatedByCodeResponse,
   AuthAuthenticatedByPasswordResponse,
   AuthAuthenticatedResponse,
   AuthAuthenticationOrReauthenticationResponse,
@@ -31,6 +32,7 @@ import type {
   AuthBrowserAuthPhoneVerifyResendPost409,
   AuthChangePasswordBody,
   AuthConfigurationResponse,
+  AuthConfirmLoginCodeBody,
   AuthConflictResponse,
   AuthEmailAddressesResponse,
   AuthEmailBody,
@@ -43,6 +45,7 @@ import type {
   AuthReauthenticateBody,
   AuthRefreshTokenBody,
   AuthRequestPasswordBody,
+  AuthRequestReauthenticationCodeBody,
   AuthResetPasswordBody,
   AuthSessionGoneResponse,
   AuthSignupBody,
@@ -52513,7 +52516,12 @@ export type authBrowserAuthReauthenticatePostResponse401 = {
   status: 401;
 };
 
-export type authBrowserAuthReauthenticatePostResponse403 = {
+export type authBrowserAuthReauthenticatePostResponse403ApplicationJson = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authBrowserAuthReauthenticatePostResponse403TextHtml = {
   data: string;
   status: 403;
 };
@@ -52531,7 +52539,8 @@ export type authBrowserAuthReauthenticatePostResponseError = (
   | authBrowserAuthReauthenticatePostResponse400ApplicationJson
   | authBrowserAuthReauthenticatePostResponse400TextHtml
   | authBrowserAuthReauthenticatePostResponse401
-  | authBrowserAuthReauthenticatePostResponse403
+  | authBrowserAuthReauthenticatePostResponse403ApplicationJson
+  | authBrowserAuthReauthenticatePostResponse403TextHtml
   | authBrowserAuthReauthenticatePostResponse429
 ) & {
   headers: Headers;
@@ -52590,7 +52599,9 @@ export const authBrowserAuthReauthenticatePost = (
             content: { "application/json": "json", "text/html": "text" },
           },
           "401": { content: { "application/json": "json" } },
-          "403": { content: { "text/html": "text" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
           "429": { content: { "application/json": "json" } },
         },
       },
@@ -52625,6 +52636,11 @@ export type authAppAuthReauthenticatePostResponse401 = {
   status: 401;
 };
 
+export type authAppAuthReauthenticatePostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
 export type authAppAuthReauthenticatePostResponse410 = {
   data: AuthSessionGoneResponse;
   status: 410;
@@ -52643,6 +52659,7 @@ export type authAppAuthReauthenticatePostResponseError = (
   | authAppAuthReauthenticatePostResponse400ApplicationJson
   | authAppAuthReauthenticatePostResponse400TextHtml
   | authAppAuthReauthenticatePostResponse401
+  | authAppAuthReauthenticatePostResponse403
   | authAppAuthReauthenticatePostResponse410
   | authAppAuthReauthenticatePostResponse429
 ) & {
@@ -52702,6 +52719,7 @@ export const authAppAuthReauthenticatePost = (
             content: { "application/json": "json", "text/html": "text" },
           },
           "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
           "410": { content: { "application/json": "json" } },
           "429": { content: { "application/json": "json" } },
         },
@@ -52713,6 +52731,650 @@ export const authAppAuthReauthenticatePost = (
         ...getHeaders(options?.headers),
       },
       body: JSON.stringify(authReauthenticateBody),
+    },
+  );
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse403TextHtml = {
+  data: string;
+  status: 403;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponseSuccess =
+  authBrowserAuthReauthenticateCodeRequestPostResponse200 & {
+    headers: Headers;
+  };
+export type authBrowserAuthReauthenticateCodeRequestPostResponseError = (
+  | authBrowserAuthReauthenticateCodeRequestPostResponse400ApplicationJson
+  | authBrowserAuthReauthenticateCodeRequestPostResponse400TextHtml
+  | authBrowserAuthReauthenticateCodeRequestPostResponse401
+  | authBrowserAuthReauthenticateCodeRequestPostResponse403ApplicationJson
+  | authBrowserAuthReauthenticateCodeRequestPostResponse403TextHtml
+  | authBrowserAuthReauthenticateCodeRequestPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authBrowserAuthReauthenticateCodeRequestPostResponse =
+  | authBrowserAuthReauthenticateCodeRequestPostResponseSuccess
+  | authBrowserAuthReauthenticateCodeRequestPostResponseError;
+
+export const getAuthBrowserAuthReauthenticateCodeRequestPostUrl = () => {
+  return `/_allauth/browser/v1/auth/reauthenticate/code/request`;
+};
+
+/**
+ * Send a reauthentication code to one of the verified email addresses or
+ * the verified phone number listed on the `reauthenticate_by_code` flow.
+ * @summary Request a reauthentication code
+ */
+export const authBrowserAuthReauthenticateCodeRequestPost = (
+  authRequestReauthenticationCodeBody: AuthRequestReauthenticationCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authBrowserAuthReauthenticateCodeRequestPostResponse>(
+    getAuthBrowserAuthReauthenticateCodeRequestPostUrl(),
+    {
+      operation: {
+        operationId: "auth_browser_auth_reauthenticate_code_request_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authRequestReauthenticationCodeBody),
+    },
+  );
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAppAuthReauthenticateCodeRequestPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponseSuccess =
+  authAppAuthReauthenticateCodeRequestPostResponse200 & {
+    headers: Headers;
+  };
+export type authAppAuthReauthenticateCodeRequestPostResponseError = (
+  | authAppAuthReauthenticateCodeRequestPostResponse400ApplicationJson
+  | authAppAuthReauthenticateCodeRequestPostResponse400TextHtml
+  | authAppAuthReauthenticateCodeRequestPostResponse401
+  | authAppAuthReauthenticateCodeRequestPostResponse403
+  | authAppAuthReauthenticateCodeRequestPostResponse410
+  | authAppAuthReauthenticateCodeRequestPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAppAuthReauthenticateCodeRequestPostResponse =
+  | authAppAuthReauthenticateCodeRequestPostResponseSuccess
+  | authAppAuthReauthenticateCodeRequestPostResponseError;
+
+export const getAuthAppAuthReauthenticateCodeRequestPostUrl = () => {
+  return `/_allauth/app/v1/auth/reauthenticate/code/request`;
+};
+
+/**
+ * Send a reauthentication code to one of the verified email addresses or
+ * the verified phone number listed on the `reauthenticate_by_code` flow.
+ * @summary Request a reauthentication code
+ */
+export const authAppAuthReauthenticateCodeRequestPost = (
+  authRequestReauthenticationCodeBody: AuthRequestReauthenticationCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAppAuthReauthenticateCodeRequestPostResponse>(
+    getAuthAppAuthReauthenticateCodeRequestPostUrl(),
+    {
+      operation: {
+        operationId: "auth_app_auth_reauthenticate_code_request_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authRequestReauthenticationCodeBody),
+    },
+  );
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse200 = {
+  data: AuthAuthenticatedByCodeResponse;
+  status: 200;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse403TextHtml = {
+  data: string;
+  status: 403;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponseSuccess =
+  authBrowserAuthReauthenticateCodeConfirmPostResponse200 & {
+    headers: Headers;
+  };
+export type authBrowserAuthReauthenticateCodeConfirmPostResponseError = (
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse400ApplicationJson
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse400TextHtml
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse401
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse403ApplicationJson
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse403TextHtml
+  | authBrowserAuthReauthenticateCodeConfirmPostResponse409
+) & {
+  headers: Headers;
+};
+
+export type authBrowserAuthReauthenticateCodeConfirmPostResponse =
+  | authBrowserAuthReauthenticateCodeConfirmPostResponseSuccess
+  | authBrowserAuthReauthenticateCodeConfirmPostResponseError;
+
+export const getAuthBrowserAuthReauthenticateCodeConfirmPostUrl = () => {
+  return `/_allauth/browser/v1/auth/reauthenticate/code/confirm`;
+};
+
+/**
+ * Complete the pending `reauthenticate_by_code` flow using the code sent
+ * to the selected email address or phone number.
+ * @summary Confirm a reauthentication code
+ */
+export const authBrowserAuthReauthenticateCodeConfirmPost = (
+  authConfirmLoginCodeBody: AuthConfirmLoginCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authBrowserAuthReauthenticateCodeConfirmPostResponse>(
+    getAuthBrowserAuthReauthenticateCodeConfirmPostUrl(),
+    {
+      operation: {
+        operationId: "auth_browser_auth_reauthenticate_code_confirm_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "409": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authConfirmLoginCodeBody),
+    },
+  );
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse200 = {
+  data: AuthAuthenticatedByCodeResponse;
+  status: 200;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponseSuccess =
+  authAppAuthReauthenticateCodeConfirmPostResponse200 & {
+    headers: Headers;
+  };
+export type authAppAuthReauthenticateCodeConfirmPostResponseError = (
+  | authAppAuthReauthenticateCodeConfirmPostResponse400ApplicationJson
+  | authAppAuthReauthenticateCodeConfirmPostResponse400TextHtml
+  | authAppAuthReauthenticateCodeConfirmPostResponse401
+  | authAppAuthReauthenticateCodeConfirmPostResponse403
+  | authAppAuthReauthenticateCodeConfirmPostResponse409
+  | authAppAuthReauthenticateCodeConfirmPostResponse410
+) & {
+  headers: Headers;
+};
+
+export type authAppAuthReauthenticateCodeConfirmPostResponse =
+  | authAppAuthReauthenticateCodeConfirmPostResponseSuccess
+  | authAppAuthReauthenticateCodeConfirmPostResponseError;
+
+export const getAuthAppAuthReauthenticateCodeConfirmPostUrl = () => {
+  return `/_allauth/app/v1/auth/reauthenticate/code/confirm`;
+};
+
+/**
+ * Complete the pending `reauthenticate_by_code` flow using the code sent
+ * to the selected email address or phone number.
+ * @summary Confirm a reauthentication code
+ */
+export const authAppAuthReauthenticateCodeConfirmPost = (
+  authConfirmLoginCodeBody: AuthConfirmLoginCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAppAuthReauthenticateCodeConfirmPostResponse>(
+    getAuthAppAuthReauthenticateCodeConfirmPostUrl(),
+    {
+      operation: {
+        operationId: "auth_app_auth_reauthenticate_code_confirm_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "409": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authConfirmLoginCodeBody),
+    },
+  );
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse403TextHtml = {
+  data: string;
+  status: 403;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponseSuccess =
+  authBrowserAuthReauthenticateCodeResendPostResponse200 & {
+    headers: Headers;
+  };
+export type authBrowserAuthReauthenticateCodeResendPostResponseError = (
+  | authBrowserAuthReauthenticateCodeResendPostResponse400
+  | authBrowserAuthReauthenticateCodeResendPostResponse401
+  | authBrowserAuthReauthenticateCodeResendPostResponse403ApplicationJson
+  | authBrowserAuthReauthenticateCodeResendPostResponse403TextHtml
+  | authBrowserAuthReauthenticateCodeResendPostResponse409
+  | authBrowserAuthReauthenticateCodeResendPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authBrowserAuthReauthenticateCodeResendPostResponse =
+  | authBrowserAuthReauthenticateCodeResendPostResponseSuccess
+  | authBrowserAuthReauthenticateCodeResendPostResponseError;
+
+export const getAuthBrowserAuthReauthenticateCodeResendPostUrl = () => {
+  return `/_allauth/browser/v1/auth/reauthenticate/code/resend`;
+};
+
+/**
+ * Send a new code for the pending `reauthenticate_by_code` flow.
+ * Requires `ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND` to be enabled.
+ * @summary Resend a reauthentication code
+ */
+export const authBrowserAuthReauthenticateCodeResendPost = (
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  return apiRequest<authBrowserAuthReauthenticateCodeResendPostResponse>(
+    getAuthBrowserAuthReauthenticateCodeResendPostUrl(),
+    {
+      operation: {
+        operationId: "auth_browser_auth_reauthenticate_code_resend_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": { content: { "text/html": "text" } },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "409": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponseSuccess =
+  authAppAuthReauthenticateCodeResendPostResponse200 & {
+    headers: Headers;
+  };
+export type authAppAuthReauthenticateCodeResendPostResponseError = (
+  | authAppAuthReauthenticateCodeResendPostResponse400
+  | authAppAuthReauthenticateCodeResendPostResponse401
+  | authAppAuthReauthenticateCodeResendPostResponse403
+  | authAppAuthReauthenticateCodeResendPostResponse409
+  | authAppAuthReauthenticateCodeResendPostResponse410
+  | authAppAuthReauthenticateCodeResendPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAppAuthReauthenticateCodeResendPostResponse =
+  | authAppAuthReauthenticateCodeResendPostResponseSuccess
+  | authAppAuthReauthenticateCodeResendPostResponseError;
+
+export const getAuthAppAuthReauthenticateCodeResendPostUrl = () => {
+  return `/_allauth/app/v1/auth/reauthenticate/code/resend`;
+};
+
+/**
+ * Send a new code for the pending `reauthenticate_by_code` flow.
+ * Requires `ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND` to be enabled.
+ * @summary Resend a reauthentication code
+ */
+export const authAppAuthReauthenticateCodeResendPost = (
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  return apiRequest<authAppAuthReauthenticateCodeResendPostResponse>(
+    getAuthAppAuthReauthenticateCodeResendPostUrl(),
+    {
+      operation: {
+        operationId: "auth_app_auth_reauthenticate_code_resend_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": { content: { "text/html": "text" } },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "409": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
     },
   );
 };
@@ -56251,7 +56913,12 @@ export type authAliasBrowserAuthReauthenticatePostResponse401 = {
   status: 401;
 };
 
-export type authAliasBrowserAuthReauthenticatePostResponse403 = {
+export type authAliasBrowserAuthReauthenticatePostResponse403ApplicationJson = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAliasBrowserAuthReauthenticatePostResponse403TextHtml = {
   data: string;
   status: 403;
 };
@@ -56269,7 +56936,8 @@ export type authAliasBrowserAuthReauthenticatePostResponseError = (
   | authAliasBrowserAuthReauthenticatePostResponse400ApplicationJson
   | authAliasBrowserAuthReauthenticatePostResponse400TextHtml
   | authAliasBrowserAuthReauthenticatePostResponse401
-  | authAliasBrowserAuthReauthenticatePostResponse403
+  | authAliasBrowserAuthReauthenticatePostResponse403ApplicationJson
+  | authAliasBrowserAuthReauthenticatePostResponse403TextHtml
   | authAliasBrowserAuthReauthenticatePostResponse429
 ) & {
   headers: Headers;
@@ -56328,7 +56996,9 @@ export const authAliasBrowserAuthReauthenticatePost = (
             content: { "application/json": "json", "text/html": "text" },
           },
           "401": { content: { "application/json": "json" } },
-          "403": { content: { "text/html": "text" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
           "429": { content: { "application/json": "json" } },
         },
       },
@@ -56363,6 +57033,11 @@ export type authAliasAppAuthReauthenticatePostResponse401 = {
   status: 401;
 };
 
+export type authAliasAppAuthReauthenticatePostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
 export type authAliasAppAuthReauthenticatePostResponse410 = {
   data: AuthSessionGoneResponse;
   status: 410;
@@ -56381,6 +57056,7 @@ export type authAliasAppAuthReauthenticatePostResponseError = (
   | authAliasAppAuthReauthenticatePostResponse400ApplicationJson
   | authAliasAppAuthReauthenticatePostResponse400TextHtml
   | authAliasAppAuthReauthenticatePostResponse401
+  | authAliasAppAuthReauthenticatePostResponse403
   | authAliasAppAuthReauthenticatePostResponse410
   | authAliasAppAuthReauthenticatePostResponse429
 ) & {
@@ -56440,6 +57116,7 @@ export const authAliasAppAuthReauthenticatePost = (
             content: { "application/json": "json", "text/html": "text" },
           },
           "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
           "410": { content: { "application/json": "json" } },
           "429": { content: { "application/json": "json" } },
         },
@@ -56451,6 +57128,655 @@ export const authAliasAppAuthReauthenticatePost = (
         ...getHeaders(options?.headers),
       },
       body: JSON.stringify(authReauthenticateBody),
+    },
+  );
+};
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse400TextHtml =
+  {
+    data: string;
+    status: 400;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse403TextHtml =
+  {
+    data: string;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponseSuccess =
+  authAliasBrowserAuthReauthenticateCodeRequestPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponseError = (
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse400ApplicationJson
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse400TextHtml
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse401
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse403ApplicationJson
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse403TextHtml
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeRequestPostResponse =
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponseSuccess
+  | authAliasBrowserAuthReauthenticateCodeRequestPostResponseError;
+
+export const getAuthAliasBrowserAuthReauthenticateCodeRequestPostUrl = () => {
+  return `/api/auth/browser/v1/auth/reauthenticate/code/request`;
+};
+
+/**
+ * Send a reauthentication code to one of the verified email addresses or
+ * the verified phone number listed on the `reauthenticate_by_code` flow.
+ * @summary Request a reauthentication code
+ */
+export const authAliasBrowserAuthReauthenticateCodeRequestPost = (
+  authRequestReauthenticationCodeBody: AuthRequestReauthenticationCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAliasBrowserAuthReauthenticateCodeRequestPostResponse>(
+    getAuthAliasBrowserAuthReauthenticateCodeRequestPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_browser_auth_reauthenticate_code_request_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authRequestReauthenticationCodeBody),
+    },
+  );
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponseSuccess =
+  authAliasAppAuthReauthenticateCodeRequestPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasAppAuthReauthenticateCodeRequestPostResponseError = (
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse400ApplicationJson
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse400TextHtml
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse401
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse403
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse410
+  | authAliasAppAuthReauthenticateCodeRequestPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAliasAppAuthReauthenticateCodeRequestPostResponse =
+  | authAliasAppAuthReauthenticateCodeRequestPostResponseSuccess
+  | authAliasAppAuthReauthenticateCodeRequestPostResponseError;
+
+export const getAuthAliasAppAuthReauthenticateCodeRequestPostUrl = () => {
+  return `/api/auth/app/v1/auth/reauthenticate/code/request`;
+};
+
+/**
+ * Send a reauthentication code to one of the verified email addresses or
+ * the verified phone number listed on the `reauthenticate_by_code` flow.
+ * @summary Request a reauthentication code
+ */
+export const authAliasAppAuthReauthenticateCodeRequestPost = (
+  authRequestReauthenticationCodeBody: AuthRequestReauthenticationCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAliasAppAuthReauthenticateCodeRequestPostResponse>(
+    getAuthAliasAppAuthReauthenticateCodeRequestPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_app_auth_reauthenticate_code_request_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authRequestReauthenticationCodeBody),
+    },
+  );
+};
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse200 = {
+  data: AuthAuthenticatedByCodeResponse;
+  status: 200;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse400TextHtml =
+  {
+    data: string;
+    status: 400;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse403TextHtml =
+  {
+    data: string;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponseSuccess =
+  authAliasBrowserAuthReauthenticateCodeConfirmPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponseError = (
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse400ApplicationJson
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse400TextHtml
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse401
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse403ApplicationJson
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse403TextHtml
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponse409
+) & {
+  headers: Headers;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeConfirmPostResponse =
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponseSuccess
+  | authAliasBrowserAuthReauthenticateCodeConfirmPostResponseError;
+
+export const getAuthAliasBrowserAuthReauthenticateCodeConfirmPostUrl = () => {
+  return `/api/auth/browser/v1/auth/reauthenticate/code/confirm`;
+};
+
+/**
+ * Complete the pending `reauthenticate_by_code` flow using the code sent
+ * to the selected email address or phone number.
+ * @summary Confirm a reauthentication code
+ */
+export const authAliasBrowserAuthReauthenticateCodeConfirmPost = (
+  authConfirmLoginCodeBody: AuthConfirmLoginCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAliasBrowserAuthReauthenticateCodeConfirmPostResponse>(
+    getAuthAliasBrowserAuthReauthenticateCodeConfirmPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_browser_auth_reauthenticate_code_confirm_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "409": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authConfirmLoginCodeBody),
+    },
+  );
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse200 = {
+  data: AuthAuthenticatedByCodeResponse;
+  status: 200;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse400ApplicationJson =
+  {
+    data: AuthErrorResponse;
+    status: 400;
+  };
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse400TextHtml = {
+  data: string;
+  status: 400;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponseSuccess =
+  authAliasAppAuthReauthenticateCodeConfirmPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponseError = (
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse400ApplicationJson
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse400TextHtml
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse401
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse403
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse409
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponse410
+) & {
+  headers: Headers;
+};
+
+export type authAliasAppAuthReauthenticateCodeConfirmPostResponse =
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponseSuccess
+  | authAliasAppAuthReauthenticateCodeConfirmPostResponseError;
+
+export const getAuthAliasAppAuthReauthenticateCodeConfirmPostUrl = () => {
+  return `/api/auth/app/v1/auth/reauthenticate/code/confirm`;
+};
+
+/**
+ * Complete the pending `reauthenticate_by_code` flow using the code sent
+ * to the selected email address or phone number.
+ * @summary Confirm a reauthentication code
+ */
+export const authAliasAppAuthReauthenticateCodeConfirmPost = (
+  authConfirmLoginCodeBody: AuthConfirmLoginCodeBody,
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return apiRequest<authAliasAppAuthReauthenticateCodeConfirmPostResponse>(
+    getAuthAliasAppAuthReauthenticateCodeConfirmPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_app_auth_reauthenticate_code_confirm_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "409": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(authConfirmLoginCodeBody),
+    },
+  );
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse403ApplicationJson =
+  {
+    data: AuthForbiddenResponse;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse403TextHtml =
+  {
+    data: string;
+    status: 403;
+  };
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponseSuccess =
+  authAliasBrowserAuthReauthenticateCodeResendPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponseError = (
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse400
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse401
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse403ApplicationJson
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse403TextHtml
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse409
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAliasBrowserAuthReauthenticateCodeResendPostResponse =
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponseSuccess
+  | authAliasBrowserAuthReauthenticateCodeResendPostResponseError;
+
+export const getAuthAliasBrowserAuthReauthenticateCodeResendPostUrl = () => {
+  return `/api/auth/browser/v1/auth/reauthenticate/code/resend`;
+};
+
+/**
+ * Send a new code for the pending `reauthenticate_by_code` flow.
+ * Requires `ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND` to be enabled.
+ * @summary Resend a reauthentication code
+ */
+export const authAliasBrowserAuthReauthenticateCodeResendPost = (
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  return apiRequest<authAliasBrowserAuthReauthenticateCodeResendPostResponse>(
+    getAuthAliasBrowserAuthReauthenticateCodeResendPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_browser_auth_reauthenticate_code_resend_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": { content: { "text/html": "text" } },
+          "401": { content: { "application/json": "json" } },
+          "403": {
+            content: { "application/json": "json", "text/html": "text" },
+          },
+          "409": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse200 = {
+  data: AuthStatusOKResponse;
+  status: 200;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse401 = {
+  data: AuthAuthenticationResponse;
+  status: 401;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse403 = {
+  data: AuthForbiddenResponse;
+  status: 403;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse409 = {
+  data: AuthConflictResponse;
+  status: 409;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse410 = {
+  data: AuthSessionGoneResponse;
+  status: 410;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse429 = {
+  data: AuthTooManyRequestsResponse;
+  status: 429;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponseSuccess =
+  authAliasAppAuthReauthenticateCodeResendPostResponse200 & {
+    headers: Headers;
+  };
+export type authAliasAppAuthReauthenticateCodeResendPostResponseError = (
+  | authAliasAppAuthReauthenticateCodeResendPostResponse400
+  | authAliasAppAuthReauthenticateCodeResendPostResponse401
+  | authAliasAppAuthReauthenticateCodeResendPostResponse403
+  | authAliasAppAuthReauthenticateCodeResendPostResponse409
+  | authAliasAppAuthReauthenticateCodeResendPostResponse410
+  | authAliasAppAuthReauthenticateCodeResendPostResponse429
+) & {
+  headers: Headers;
+};
+
+export type authAliasAppAuthReauthenticateCodeResendPostResponse =
+  | authAliasAppAuthReauthenticateCodeResendPostResponseSuccess
+  | authAliasAppAuthReauthenticateCodeResendPostResponseError;
+
+export const getAuthAliasAppAuthReauthenticateCodeResendPostUrl = () => {
+  return `/api/auth/app/v1/auth/reauthenticate/code/resend`;
+};
+
+/**
+ * Send a new code for the pending `reauthenticate_by_code` flow.
+ * Requires `ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND` to be enabled.
+ * @summary Resend a reauthentication code
+ */
+export const authAliasAppAuthReauthenticateCodeResendPost = (
+  options?: Parameters<typeof apiRequest>[1],
+) => {
+  return apiRequest<authAliasAppAuthReauthenticateCodeResendPostResponse>(
+    getAuthAliasAppAuthReauthenticateCodeResendPostUrl(),
+    {
+      operation: {
+        operationId: "auth_alias_app_auth_reauthenticate_code_resend_post",
+        responses: {
+          "200": { content: { "application/json": "json" } },
+          "400": { content: { "text/html": "text" } },
+          "401": { content: { "application/json": "json" } },
+          "403": { content: { "application/json": "json" } },
+          "409": { content: { "application/json": "json" } },
+          "410": { content: { "application/json": "json" } },
+          "429": { content: { "application/json": "json" } },
+        },
+      },
+      ...options,
+      method: "POST",
     },
   );
 };

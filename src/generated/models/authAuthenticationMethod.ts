@@ -25,11 +25,13 @@ export type AuthAuthenticationMethod =
       method: "code";
       at: AuthTimestamp;
       email: AuthEmail;
+      reauthenticated?: true;
     }
   | {
       method: "code";
       at: AuthTimestamp;
       phone: AuthPhone;
+      reauthenticated?: true;
     }
   | {
       method: "password";

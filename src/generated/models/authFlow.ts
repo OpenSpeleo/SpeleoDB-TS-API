@@ -4,6 +4,7 @@
 import type { AuthAuthenticatorType } from "./authAuthenticatorType";
 import type { AuthFlowId } from "./authFlowId";
 import type { AuthProvider } from "./authProvider";
+import type { AuthReauthenticationCodeRecipient } from "./authReauthenticationCodeRecipient";
 
 export interface AuthFlow {
   id: AuthFlowId;
@@ -11,4 +12,6 @@ export interface AuthFlow {
   is_pending?: true;
   /** Matches `settings.MFA_SUPPORTED_TYPES`. */
   types?: AuthAuthenticatorType[];
+  /** Verified destinations that can receive a reauthentication code. */
+  recipients?: AuthReauthenticationCodeRecipient[];
 }

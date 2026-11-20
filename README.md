@@ -28,6 +28,12 @@ const client = createApiClient({
 // generatedOperation(generatedArguments, { client, signal });
 ```
 
+For an application using Sign in with SpeleoDB, send its OAuth access token as
+`Authorization: Bearer <access token>` from the application server. The
+`speleodbOIDC` security scheme in the packaged OpenAPI document identifies the
+operations that accept the delegated `data:read` scope. The user must grant that
+scope to read their data.
+
 Header providers run for each request, including offline replay. Browser apps
 using session authentication can provide their CSRF header from this callback
 and set `credentials: 'same-origin'`. Authentication and cache policy stay in
@@ -139,8 +145,8 @@ monorepo separately checks that its local web and SDK snapshots and the recorded
 digest agree; this integration check does not couple standalone CI or releases.
 
 `bun run test` uses Vitest with Istanbul runtime coverage. A schema-derived
-loopback HTTP matrix exercises all 376 supported operations, 584 generated
-request variants and 1,869 declared status/media combinations. It verifies
+loopback HTTP matrix exercises all 388 supported operations, 596 generated
+request variants and 1,957 declared status/media combinations. It verifies
 request bytes, complete response metadata, decoding and unexpected responses.
 Focused tests cover cancellation, streaming, redirects, credentials, forms, XHR
 adapter events and generation safety. CI verifies generation, strict types,

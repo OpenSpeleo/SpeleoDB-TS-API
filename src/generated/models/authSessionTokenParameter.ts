@@ -3,6 +3,6 @@
  */
 
 /**
- * Session token. Only needed when `client` is equal to `app`.
+ * Identifies an existing app session.
  */
 export type AuthSessionTokenParameter = string;

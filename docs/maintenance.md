@@ -243,7 +243,7 @@ hash-verifying source loader used by generation. It independently derives the
 operation, parameter, request-media and response-status/media inventory.
 `tests/generated-contract.test.ts` sends every generated callable through the
 public SDK and real fetch to an owned loopback HTTP server. Currently this means
-376 supported operations, 584 request-media callables and 1,869 declared
+388 supported operations, 596 request-media callables and 1,957 declared
 status/media cases. Each callable is checked against the entire canonical
 response metadata, not only the response selected for its request test.
 Undeclared statuses and media are tested for every operation as well.

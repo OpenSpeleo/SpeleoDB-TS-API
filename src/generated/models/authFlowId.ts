@@ -13,6 +13,7 @@ export const AuthFlowId = {
   provider_signup: "provider_signup",
   provider_token: "provider_token",
   reauthenticate: "reauthenticate",
+  reauthenticate_by_code: "reauthenticate_by_code",
   signup: "signup",
   verify_email: "verify_email",
   verify_phone: "verify_phone",
